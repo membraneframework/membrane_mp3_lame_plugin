@@ -1,4 +1,4 @@
-defmodule Membrane.Element.Mae do
+defmodule Membrane.Element.Lame do
   use Application
 
   def start(_type, _args) do
@@ -8,7 +8,7 @@ defmodule Membrane.Element.Mae do
 
     ]
 
-    opts = [strategy: :one_for_one, name: Membrane.Element.Mae]
+    opts = [strategy: :one_for_one, name: Membrane.Element.Lame]
     Supervisor.start_link(children, opts)
   end
 end

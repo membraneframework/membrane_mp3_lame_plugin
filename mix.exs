@@ -11,7 +11,7 @@ defmodule Membrane.Element.Lame.Mixfile do
      maintainers: ["Filip Abramowicz"],
      licenses: ["LGPL"],
      name: "Membrane Element: Lame",
-     source_url: "https://bitbucket.org/radiokit/membrane-element-lame",
+     source_url: "https://github.com/membraneframework/membrane-element-lame",
      preferred_cli_env: [espec: :test],
      deps: deps()]
   end
@@ -26,9 +26,9 @@ defmodule Membrane.Element.Lame.Mixfile do
 
   defp deps do
     [
-      {:membrane_core, git: "git@bitbucket.org:radiokit/membrane-core.git"},
-      {:membrane_caps_audio_raw, git: "git@bitbucket.org:radiokit/membrane-caps-audio-raw.git"},
-      {:membrane_common_c, git: "git@bitbucket.org:radiokit/membrane-common-c.git"},
+      {:membrane_core, git: "git@github.com:membraneframework/membrane-core.git"},
+      {:membrane_caps_audio_raw, git: "git@github.com:membraneframework/membrane-caps-audio-raw.git"},
+      {:membrane_common_c, git: "git@github.com:membraneframework/membrane-common-c.git"},
       {:espec, "~> 1.1.2", only: :test},
     ]
   end

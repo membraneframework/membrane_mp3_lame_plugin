@@ -48,11 +48,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
 
   On internal error, returns `{:error, {:internal, reason}}`.
   """
-  @spec process(any, bitstring) ::
+  @spec encoder_buffer(any, bitstring) ::
     {:ok, bitstring} |
     {:error, {:args, atom, String.t}} |
     {:error, {:internal, atom}}
-  def process(_encoder, _data), do: raise "NIF fail"
+  def encoder_buffer(_encoder, _data), do: raise "NIF fail"
 
 
   @doc """

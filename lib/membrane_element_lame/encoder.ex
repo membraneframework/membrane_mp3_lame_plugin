@@ -1,4 +1,3 @@
-
 defmodule Membrane.Element.Lame.Encoder do
   use Membrane.Element.Base.Filter
 

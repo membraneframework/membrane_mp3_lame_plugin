@@ -152,6 +152,8 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     return membrane_util_make_error_args(env, "encoder", "Given encoder is not valid resource");
   }
 
+  lame_close(handle->gfp);
+
   // Return value
   return membrane_util_make_ok(env);
 }

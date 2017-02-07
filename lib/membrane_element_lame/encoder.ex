@@ -28,7 +28,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
 
   @doc false
-  def handle_buffer(caps, %Membrane.Buffer{payload: payload} = buffer}, %{native: native, queue: queue} = state) do
+  def handle_buffer({:sink, %Membrane.Buffer{payload: payload} = buffer}, %{native: native, queue: queue} = state) do
 
     case EncoderNative.encode_buffer(native, queue <> payload) do
       {:error, desc} ->

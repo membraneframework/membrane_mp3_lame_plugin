@@ -13,11 +13,13 @@
 
 #include <stdio.h>
 #include <erl_nif.h>
+#include <lame/lame.h>
 
 typedef struct _EncoderHandle EncoderHandle;
 
 struct _EncoderHandle
 {
+    lame_global_flags *gfp;
 };
 
 #endif

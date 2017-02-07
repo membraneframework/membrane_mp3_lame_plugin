@@ -10,6 +10,7 @@
 #include <membrane/membrane.h>
 
 
+
 ErlNifResourceType *RES_ENCODER_HANDLE_TYPE;
 
 
@@ -45,37 +46,31 @@ int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
  */
 static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-  EncoderHandle         *handle;
+  EncoderHandle *handle;
+  lame_global_flags *gfp;
 
-  /*
-  // Get format arg
-  if(!enif_get_atom(env, argv[0], format, FORMAT_ATOM_LEN, ERL_NIF_LATIN1)) {
-    return membrane_util_make_error_args(env, "format", "Given format is not an atom");
-  }
+  // TODO - argument validation
 
-  // Get channels arg
-  if(!enif_get_int(env, argv[1], &channels)) {
-    return membrane_util_make_error_args(env, "channels", "Given channels is out of integer range or is not an integer");
-  }
+  gfp = lame_init();
 
-  if(channels != 1 && channels != 2) {
-    return membrane_util_make_error_args(env, "channels", "Given channels must be one of 1 or 2");
-  }
+  lame_set_num_channels(gfp,2);
+  lame_set_in_samplerate(gfp,44100);
+  lame_set_brate(gfp,128);
+  lame_set_mode(gfp,1);
+  lame_set_quality(gfp,2);   /* 2=high  5 = medium  7=low */
 
-  // Get samples per process arg
-  if(!enif_get_int(env, argv[2], &samples_per_process)) {
-    return membrane_util_make_error_args(env, "samples_per_process", "Given samples per process is out of integer range or is not an integer");
+  int error = lame_init_params(gfp);
+  if (error)
+  {
+    return membrane_util_make_error_internal(env, "failedtoinitializelame");
   }
-
-  if(samples_per_process <= 0) {
-    return membrane_util_make_error_args(env, "samples_per_process", "Given samples per process must be larger than 0");
-  }
-  */
 
   // Initialize handle
   handle = enif_alloc_resource(RES_ENCODER_HANDLE_TYPE, sizeof(EncoderHandle));
 
   MEMBRANE_DEBUG("Initialized EncoderHandle %p", handle);
+
+  handle->gfp = gfp;
 
   // Prepare return term
   ERL_NIF_TERM encoder_term = enif_make_resource(env, handle);

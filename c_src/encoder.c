@@ -95,7 +95,7 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
  *
  * On internal error, returns `{:error, {:internal, reason}}`.
  */
-static ERL_NIF_TERM export_encoder_buffer(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
   EncoderHandle*        handle;
   ErlNifBinary          data;
@@ -161,8 +161,8 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ErlNifFunc nif_funcs[] =
 {
-  {"create", 3, export_create},
-  {"encoder_buffer", 2, export_encoder_buffer},
+  {"create", 1, export_create},
+  {"encode_buffer", 2, export_encode_buffer},
   {"destroy", 1, export_destroy}
 };
 

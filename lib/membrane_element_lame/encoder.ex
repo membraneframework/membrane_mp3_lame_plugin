@@ -1,9 +1,11 @@
 defmodule Membrane.Element.Lame.Encoder do
   use Membrane.Element.Base.Filter
+  alias Membrane.Element.Lame.EncoderOptions
+  alias Membrane.Element.Lame.EncoderNative
 
 
   @doc false
-  def handle_init(%AggregatorOptions{interval: interval}) do
+  def handle_init(%EncoderOptions{}) do
     {:ok, %{
       native: nil,
       queue: << >>,
@@ -15,7 +17,7 @@ defmodule Membrane.Element.Lame.Encoder do
   @doc false
   def handle_caps({:sink, caps}, %{native: native} = state) do
 
-    case EncoderNative.create() do
+    case EncoderNative.create(caps) do
       {:ok, native} ->
         {:ok, %{state |
           native: native,
@@ -34,7 +36,7 @@ defmodule Membrane.Element.Lame.Encoder do
       {:error, desc} ->
         {:error, desc}
       {encoded_audio} ->
-        {:send_buffer, {caps, encoded_audio}, state}
+        {:send_buffer, {encoded_audio}, state}
     end
   end
 

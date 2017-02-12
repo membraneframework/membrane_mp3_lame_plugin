@@ -162,7 +162,7 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 static ErlNifFunc nif_funcs[] =
 {
   {"create", 1, export_create},
-  {"encode_buffer", 2, export_encode_buffer},
+  {"encode_buffer", 3, export_encode_buffer},
   {"destroy", 1, export_destroy}
 };
 

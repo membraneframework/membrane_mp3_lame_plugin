@@ -40,11 +40,12 @@ defmodule Membrane.Element.Lame.Encoder do
     sample_size = bytes_per_sample * channels
     nof_full_samples = byte_size(bitstring) |> div(sample_size)
     full_sample_in_bytes = nof_full_samples * sample_size
+    #TODO unit should probably be dependant on size of one sample
     <<full_buffer::size(full_sample_in_bytes)-unit(8), new_remainder::binary>> = bitstring
 
     {left_buffer, right_buffer} = split_buffer(full_buffer)
 
-    case EncoderNative.encode_buffer(native, bitstring) do
+    case EncoderNative.encode_buffer(native, left_buffer, right_buffer) do
       {:error, desc} ->
         {:error, desc}
       {encoded_audio} ->
@@ -52,16 +53,16 @@ defmodule Membrane.Element.Lame.Encoder do
     end
   end
 
-end
+  @doc false
+  defp split_buffer(buffer) do
+    [x | tail1] = buffer
+    [y | tail2] = tail1
+    {left, right} = split_buffer(tail1)
+    {[x | left], [y | right]}
+  end
 
-@doc false
-defp split_buffer(buffer) do
-  [x | tail1] = buffer
-  [y | tail2] = tail1
-  {left, right} = split_buffer(tail1)
-  {[x | left], [y | right]}
-end
+  defp split_buffer([]) do
+    {[],[]}
+  end
 
-defp split_buffer([]) do
-  {[],[]}
 end

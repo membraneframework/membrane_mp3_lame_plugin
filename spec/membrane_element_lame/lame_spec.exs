@@ -21,4 +21,24 @@ defmodule Membrane.Element.Lame.EncoderSpec do
       end
     end
   end
+
+  describe ".handle_buffer/2" do
+    let :channels, do: 2
+    let :format, do: :s16le
+    let :caps, do: %Membrane.Caps.Audio.Raw{channels: channels, format: format}
+    let :state, do: %{native: nil, queue: << >>, caps: caps}
+    let :buffer, do: %Membrane.Buffer{payload: payload}
+    let :payload, do:
+      << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+        1 :: integer-unit(8)-size(2)-signed-little,
+        2 :: integer-unit(8)-size(2)-signed-little,
+        3 :: integer-unit(8)-size(2)-signed-little,
+        4 :: integer-unit(8)-size(2)-signed-little,
+        5 :: integer-unit(8)-size(2)-signed-little
+      >>
+
+    it "should return an ok result" do
+      expect(described_module.handle_buffer({:sink, buffer}, state)).to be_ok_result
+    end
+  end
 end

@@ -30,10 +30,8 @@ defmodule Membrane.Element.Lame.Encoder do
     end
   end
 
-
   @doc false
   def handle_buffer({:sink, %Membrane.Buffer{payload: payload} = buffer}, %{native: native, queue: queue, caps: caps} = state) do
-
     bitstring = queue <> payload
     %Raw{format: format, channels: channels} = caps
     {:ok, bytes_per_sample} = Raw.format_to_sample_size(format)
@@ -41,9 +39,11 @@ defmodule Membrane.Element.Lame.Encoder do
     nof_full_samples = byte_size(bitstring) |> div(sample_size)
     full_sample_in_bytes = nof_full_samples * sample_size
     #TODO unit should probably be dependant on size of one sample
-    <<full_buffer::size(full_sample_in_bytes)-unit(8), new_remainder::binary>> = bitstring
 
-    {left_buffer, right_buffer} = split_buffer(full_buffer)
+    <<full_buffer::binary-size(full_sample_in_bytes)-unit(8), new_remainder::binary>> = bitstring
+
+    # Split the buffer into left and right channel
+    {left_buffer, right_buffer} = split_buffer(full_buffer, bytes_per_sample)
 
     case EncoderNative.encode_buffer(native, left_buffer, right_buffer) do
       {:error, desc} ->
@@ -54,15 +54,17 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @doc false
-  defp split_buffer(buffer) do
-    [x | tail1] = buffer
-    [y | tail2] = tail1
-    {left, right} = split_buffer(tail1)
-    {[x | left], [y | right]}
+  defp split_buffer(buffer, sample_size) do
+    split_buffer(buffer, sample_size, <<>>, <<>>)
   end
 
-  defp split_buffer([]) do
-    {[],[]}
+  @doc false
+  defp split_buffer(<<>>, _sample_size, left_buffer, right_buffer) do
+    {left_buffer, right_buffer}
   end
 
+  defp split_buffer(buffer, sample_size, left_buffer, right_buffer) do
+    <<left_sample::binary-size(sample_size)-unit(8), right_sample::binary-size(sample_size)-unit(8), rest_of_buffer::binary>> = buffer
+    split_buffer(rest_of_buffer, sample_size, left_buffer <> left_sample, right_buffer <> right_sample)
+  end
 end

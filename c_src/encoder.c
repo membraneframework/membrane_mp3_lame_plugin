@@ -98,37 +98,44 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
   EncoderHandle*        handle;
-  ErlNifBinary          data;
+  ErlNifBinary          left_buffer;
+  ErlNifBinary          right_buffer;
+  int                   num_of_samples;
 
-  /*
   // Get resource arg
-  if(!enif_get_resource(env, argv[0], RES_AGGREGATOR_HANDLE_TYPE, (void **) &handle)) {
-    return membrane_util_make_error_args(env, "aggregator", "Given aggregator is not valid resource");
+  if(!enif_get_resource(env, argv[0], RES_ENCODER_HANDLE_TYPE, (void **) &handle)) {
+    return membrane_util_make_error_args(env, "data", "Given encoder is not valid resource");
   }
 
   // Get data arg
-  if(!enif_inspect_binary(env, argv[1], &data)) {
-    return membrane_util_make_error_args(env, "data", "Given data is not valid binary");
+  if(!enif_inspect_binary(env, argv[1], &left_buffer)) {
+    return membrane_util_make_error_args(env, "data", "Given data for left channel is not valid binary");
+  }
+  if(!enif_inspect_binary(env, argv[2], &right_buffer)) {
+    return membrane_util_make_error_args(env, "data", "Given data for right channel is not valid binary");
   }
 
-  printf("QFILABR: samples_per_process=%u\n", handle->samples_per_process);
-  printf("QFILABR: channels=%u\n", handle->channels);
-  printf("QFILABR: size of data = %u\n", data.size);
-
-  for(int i=0; i < 32; i++)
-  {
-    printf("QFIALBR data.data[0]=%u\n", data.data[i]);
+  if(!enif_get_int(env, argv[3], &num_of_samples)) {
+    return membrane_util_make_error_args(env, "data", "Given data for number of samples is not valid");
   }
+
+  // This is worst case calculation, should be changed to more precise one
+  int mp3buffer_size = 1.25 * num_of_samples + 7200;
 
   // Prepare data for returned terms
-  ERL_NIF_TERM max_output_term, min_output_term;
-  unsigned char *max_output_data = enif_make_new_binary(env, handle->sample_size, &max_output_term);
-  unsigned char *min_output_data = enif_make_new_binary(env, handle->sample_size, &min_output_term);
+  ERL_NIF_TERM output_data;
+  handle->mp3buffer = enif_make_new_binary(env, mp3buffer_size, &output_data);
 
-  handle->max_function((unsigned char*)data.data, handle->channels, handle->samples_per_process, max_output_data);
-  handle->min_function((unsigned char*)data.data, handle->channels, handle->samples_per_process, min_output_data);
-  */
-  return membrane_util_make_ok_tuple2(env, 0, 0);
+  // Encode the buffer
+  int result = lame_encode_buffer(handle->gfp, (const short int*)&left_buffer, (const short int*)&right_buffer,
+                                  num_of_samples, handle->mp3buffer, mp3buffer_size);
+
+  if(result < 0)
+  {
+    return membrane_util_make_error_args(env, "encoder", "Lame unable to encode provided data");
+  }
+
+  return membrane_util_make_ok_tuple(env, output_data);
 }
 
 
@@ -162,7 +169,7 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 static ErlNifFunc nif_funcs[] =
 {
   {"create", 1, export_create},
-  {"encode_buffer", 3, export_encode_buffer},
+  {"encode_buffer", 4, export_encode_buffer},
   {"destroy", 1, export_destroy}
 };
 

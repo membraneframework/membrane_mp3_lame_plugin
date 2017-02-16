@@ -45,7 +45,7 @@ defmodule Membrane.Element.Lame.Encoder do
     # Split the buffer into left and right channel
     {left_buffer, right_buffer} = split_buffer(full_buffer, bytes_per_sample)
 
-    case EncoderNative.encode_buffer(native, left_buffer, right_buffer) do
+    case EncoderNative.encode_buffer(native, left_buffer, right_buffer, nof_full_samples) do
       {:error, desc} ->
         {:error, desc}
       {encoded_audio} ->

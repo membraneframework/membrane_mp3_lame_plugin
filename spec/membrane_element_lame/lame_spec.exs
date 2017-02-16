@@ -1,6 +1,8 @@
 defmodule Membrane.Element.Lame.EncoderSpec do
   use ESpec, async: false
 
+  alias Membrane.Element.Lame.EncoderNative
+
   describe ".handle_caps/2" do
     context do
       let :caps, do: %Membrane.Caps.Audio.Raw{channels: nil, sample_rate: nil, format: nil}
@@ -26,8 +28,9 @@ defmodule Membrane.Element.Lame.EncoderSpec do
     let :channels, do: 2
     let :format, do: :s16le
     let :caps, do: %Membrane.Caps.Audio.Raw{channels: channels, format: format}
-    let :state, do: %{native: nil, queue: << >>, caps: caps}
+    let :state, do: %{native: native, queue: << >>, caps: caps}
     let :buffer, do: %Membrane.Buffer{payload: payload}
+    let_ok :native, do: EncoderNative.create()
     let :payload, do:
       << # s16le format, samples 1 left, 1 right, 2 left, 2 right
         1 :: integer-unit(8)-size(2)-signed-little,
@@ -38,7 +41,8 @@ defmodule Membrane.Element.Lame.EncoderSpec do
       >>
 
     it "should return an ok result" do
-      expect(described_module.handle_buffer({:sink, buffer}, state)).to be_ok_result
+      {result, _commands, _new_state} = described_module.handle_buffer({:sink, buffer}, state)
+      expect(result).to eq :ok
     end
   end
 end

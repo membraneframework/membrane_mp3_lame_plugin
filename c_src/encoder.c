@@ -53,11 +53,11 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
   gfp = lame_init();
 
-  lame_set_num_channels(gfp,2);
-  lame_set_in_samplerate(gfp,44100);
-  lame_set_brate(gfp,128);
-  lame_set_mode(gfp,1);
-  lame_set_quality(gfp,2);   /* 2=high  5 = medium  7=low */
+  lame_set_num_channels(gfp, 2);
+  lame_set_in_samplerate(gfp, 44100);
+  lame_set_brate(gfp, 128);
+  lame_set_mode(gfp, 1);
+  lame_set_quality(gfp, 2);   /* 2=high  5 = medium  7=low */
 
   int error = lame_init_params(gfp);
   if (error)
@@ -168,7 +168,7 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ErlNifFunc nif_funcs[] =
 {
-  {"create", 1, export_create},
+  {"create", 0, export_create},
   {"encode_buffer", 4, export_encode_buffer},
   {"destroy", 1, export_destroy}
 };

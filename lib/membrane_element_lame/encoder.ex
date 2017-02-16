@@ -16,9 +16,9 @@ defmodule Membrane.Element.Lame.Encoder do
 
 
   @doc false
-  def handle_caps({:sink, caps}, %{native: native} = state) do
+  def handle_caps({:sink, caps}, state) do
 
-    case EncoderNative.create(caps) do
+    case EncoderNative.create() do
       {:ok, native} ->
         {:ok, %{state |
           caps: caps,
@@ -31,7 +31,7 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @doc false
-  def handle_buffer({:sink, %Membrane.Buffer{payload: payload} = buffer}, %{native: native, queue: queue, caps: caps} = state) do
+  def handle_buffer({:sink, %Membrane.Buffer{payload: payload} = _buffer}, %{native: native, queue: queue, caps: caps} = state) do
     bitstring = queue <> payload
     %Raw{format: format, channels: channels} = caps
     {:ok, bytes_per_sample} = Raw.format_to_sample_size(format)
@@ -46,10 +46,8 @@ defmodule Membrane.Element.Lame.Encoder do
     {left_buffer, right_buffer} = split_buffer(full_buffer, bytes_per_sample)
 
     case EncoderNative.encode_buffer(native, left_buffer, right_buffer, nof_full_samples) do
-      {:error, desc} ->
-        {:error, desc}
-      {encoded_audio} ->
-        {:ok, [{:send, {:source, buffer}}], %{state | queue: new_remainder}}
+      {:error, desc} -> {:error, desc}
+      {:ok, encoded_audio} -> {:ok, [{:send, {:source, encoded_audio}}], %{state | queue: new_remainder}}
     end
   end
 

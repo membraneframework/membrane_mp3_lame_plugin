@@ -26,11 +26,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
 
   On encoder initialization error, returns `{:error, {:internal, reason}}`.
   """
-  @spec create(Membrane.Caps.Audio.Raw.format_t) ::
+  @spec create() ::
   {:ok, any} |
   {:error, {:args, atom, String.t}} |
   {:error, {:internal, atom}}
-  def create(_sample_size), do: raise "NIF fail"
+  def create(), do: raise "NIF fail"
 
 
   @doc """

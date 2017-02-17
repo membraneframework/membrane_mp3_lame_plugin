@@ -10,6 +10,10 @@
 #include <membrane/membrane.h>
 
 
+#define MP3_BUFFER_TOO_SMALL        -1
+#define MALLOC_PROBLEM              -2
+#define LAME_INIT_PARAMS_NOT_CALLED -3
+#define PSYCHO_ACOUSTIC_PROBLEMS    -4
 
 ErlNifResourceType *RES_ENCODER_HANDLE_TYPE;
 
@@ -120,20 +124,45 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
   }
 
   // This is worst case calculation, should be changed to more precise one
-  int mp3buffer_size = 1.25 * num_of_samples + 7200;
+  int max_mp3buffer_size = 1.25 * num_of_samples + 7200;
 
-  // Prepare data for returned terms
-  ERL_NIF_TERM output_data;
-  handle->mp3buffer = enif_make_new_binary(env, mp3buffer_size, &output_data);
+  handle->mp3buffer = malloc(max_mp3buffer_size);
 
   // Encode the buffer
   int result = lame_encode_buffer(handle->gfp, (const short int*)&left_buffer, (const short int*)&right_buffer,
-                                  num_of_samples, handle->mp3buffer, mp3buffer_size);
+                                  num_of_samples, handle->mp3buffer, max_mp3buffer_size);
 
-  if(result < 0)
+  switch (result)
   {
-    return membrane_util_make_error_args(env, "encoder", "Lame unable to encode provided data");
+    case MP3_BUFFER_TOO_SMALL:
+      return membrane_util_make_error_args(env, "encoder", "MP3 buffer was too small");
+      break;
+
+    case MALLOC_PROBLEM:
+      return membrane_util_make_error_args(env, "encoder", "There was malloc problem in lame");
+      break;
+
+    case LAME_INIT_PARAMS_NOT_CALLED:
+      return membrane_util_make_error_args(env, "encoder", "Lame_init_params not called");
+      break;
+
+    case PSYCHO_ACOUSTIC_PROBLEMS:
+      return membrane_util_make_error_args(env, "encoder", "Psycho acoustic problems in lame");
+      break;
+
+    default:
+      // No error - result contains number of bytes in output buffer.
+      break;
   }
+
+  // Prepare data for returned terms
+  ERL_NIF_TERM output_data;
+
+  // Move encoded data to fit buffer
+  char* outputbuffer = enif_make_new_binary(env, result, &output_data);
+  memcpy(outputbuffer, handle->mp3buffer, result);
+  free(handle->mp3buffer);
+  handle->mp3buffer = outputbuffer;
 
   return membrane_util_make_ok_tuple(env, output_data);
 }

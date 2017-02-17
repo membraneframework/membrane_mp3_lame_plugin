@@ -22,6 +22,11 @@ void res_encoder_handle_destructor(ErlNifEnv *env, void *value) {
   EncoderHandle *handle = (EncoderHandle *) value;
   MEMBRANE_DEBUG("Destroying EncoderHandle %p", handle);
 
+  if (handle->mp3buffer != NULL)
+  {
+    free(handle->mp3buffer);
+  }
+
   enif_release_resource(handle);
 }
 
@@ -75,6 +80,7 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
   MEMBRANE_DEBUG("Initialized EncoderHandle %p", handle);
 
   handle->gfp = gfp;
+  handle->mp3buffer = NULL;
 
   // Prepare return term
   ERL_NIF_TERM encoder_term = enif_make_resource(env, handle);
@@ -129,8 +135,12 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
   handle->mp3buffer = malloc(max_mp3buffer_size);
 
   // Encode the buffer
-  int result = lame_encode_buffer(handle->gfp, (const short int*)&left_buffer, (const short int*)&right_buffer,
-                                  num_of_samples, handle->mp3buffer, max_mp3buffer_size);
+  int result = lame_encode_buffer(handle->gfp,
+                                  (const short int*)&left_buffer,
+                                  (const short int*)&right_buffer,
+                                  num_of_samples,
+                                  handle->mp3buffer,
+                                  max_mp3buffer_size);
 
   switch (result)
   {
@@ -161,8 +171,6 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
   // Move encoded data to fit buffer
   char* outputbuffer = enif_make_new_binary(env, result, &output_data);
   memcpy(outputbuffer, handle->mp3buffer, result);
-  free(handle->mp3buffer);
-  handle->mp3buffer = outputbuffer;
 
   return membrane_util_make_ok_tuple(env, output_data);
 }
@@ -189,6 +197,11 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
   }
 
   lame_close(handle->gfp);
+
+  if (handle->mp3buffer != NULL)
+  {
+    free(handle->mp3buffer);
+  }
 
   // Return value
   return membrane_util_make_ok(env);

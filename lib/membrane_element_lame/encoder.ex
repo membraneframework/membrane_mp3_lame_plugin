@@ -47,7 +47,9 @@ defmodule Membrane.Element.Lame.Encoder do
 
     case EncoderNative.encode_buffer(native, left_buffer, right_buffer, nof_full_samples) do
       {:error, desc} -> {:error, desc}
-      {:ok, encoded_audio} -> {:ok, [{:send, {:source, encoded_audio}}], %{state | queue: new_remainder}}
+      {:ok, encoded_audio} ->
+        IO.inspect "#{encoded_audio}"
+        {:ok, [{:send, {:source, encoded_audio}}], %{state | queue: new_remainder}}
     end
   end
 

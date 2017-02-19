@@ -28,21 +28,85 @@ defmodule Membrane.Element.Lame.EncoderSpec do
     let :channels, do: 2
     let :format, do: :s16le
     let :caps, do: %Membrane.Caps.Audio.Raw{channels: channels, format: format}
-    let :state, do: %{native: native, queue: << >>, caps: caps}
     let :buffer, do: %Membrane.Buffer{payload: payload}
+    let :state, do: %{native: native, queue: queue, caps: caps}
     let_ok :native, do: EncoderNative.create()
-    let :payload, do:
-      << # s16le format, samples 1 left, 1 right, 2 left, 2 right
-        1 :: integer-unit(8)-size(2)-signed-little,
-        2 :: integer-unit(8)-size(2)-signed-little,
-        3 :: integer-unit(8)-size(2)-signed-little,
-        4 :: integer-unit(8)-size(2)-signed-little,
-        5 :: integer-unit(8)-size(2)-signed-little
-      >>
 
-    it "should return an ok result" do
-      {result, _commands, _new_state} = described_module.handle_buffer({:sink, buffer}, state)
-      expect(result).to eq :ok
+    context "when queue is empty and buffer is not even" do
+      let :queue, do: << >>
+      let :last_not_even_sample, do:
+        << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+          5 :: integer-unit(8)-size(2)-signed-little
+        >>
+      let :payload, do:
+        << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+          1 :: integer-unit(8)-size(2)-signed-little,
+          2 :: integer-unit(8)-size(2)-signed-little,
+          3 :: integer-unit(8)-size(2)-signed-little,
+          4 :: integer-unit(8)-size(2)-signed-little,
+          5 :: integer-unit(8)-size(2)-signed-little
+        >>
+
+      it "should return an ok result" do
+        {result, _commands, _new_state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(result).to eq :ok
+      end
+
+      it "queue should contain last not even sample" do
+        {result, _commands, %{queue: new_queue} = state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(new_queue).to eq last_not_even_sample
+      end
+    end
+
+    context "when queue has sample and buffer is not even" do
+      let :queue, do:
+        <<
+          1 :: integer-unit(8)-size(2)-signed-little
+        >>
+      let :payload, do:
+        << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+          2 :: integer-unit(8)-size(2)-signed-little,
+          3 :: integer-unit(8)-size(2)-signed-little,
+          4 :: integer-unit(8)-size(2)-signed-little,
+        >>
+
+      it "should return an ok result" do
+        {result, _commands, _new_state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(result).to eq :ok
+      end
+
+      it "queue should be empty" do
+        {result, _commands, %{queue: new_queue}= state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(new_queue).to eq << >>
+      end
+    end
+
+    context "when queue has sample and buffer is even" do
+      let :queue, do:
+        <<
+          1 :: integer-unit(8)-size(2)-signed-little
+        >>
+      let :payload, do:
+        << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+          2 :: integer-unit(8)-size(2)-signed-little,
+          3 :: integer-unit(8)-size(2)-signed-little,
+          4 :: integer-unit(8)-size(2)-signed-little,
+          5 :: integer-unit(8)-size(2)-signed-little
+        >>
+      let :last_not_even_sample, do:
+        << # s16le format, samples 1 left, 1 right, 2 left, 2 right
+          5 :: integer-unit(8)-size(2)-signed-little
+        >>
+
+      it "should return an ok result" do
+        {result, _commands, _new_state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(result).to eq :ok
+      end
+
+      it "queue should be emty" do
+        {result, _commands, %{queue: new_queue}= state} = described_module.handle_buffer({:sink, buffer}, state)
+        expect(new_queue).to eq last_not_even_sample
+      end
     end
   end
 end

@@ -5,6 +5,21 @@ defmodule Membrane.Element.Lame.Encoder do
   alias Membrane.Caps.Audio.Raw
 
 
+  def_known_source_pads %{
+    :sink => {:always, [
+      %Raw{format: :s8},
+      %Raw{format: :u8},
+    ]}
+  }
+
+  def_known_sink_pads %{
+    :source => {:always, [
+      %Raw{format: :s8},
+      %Raw{format: :u8},
+    ]}
+  }
+
+
   @doc false
   def handle_init(%EncoderOptions{}) do
     {:ok, %{

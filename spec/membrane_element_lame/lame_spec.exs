@@ -24,6 +24,26 @@ defmodule Membrane.Element.Lame.EncoderSpec do
     end
   end
 
+  describe ".known_source_pads/0" do
+    it "should return one always available pad with all supported caps" do
+      expect(described_module.known_source_pads).to eq(%{
+        :sink => {:always, [
+          %Membrane.Caps.Audio.Raw{format: :s8},
+          %Membrane.Caps.Audio.Raw{format: :u8},
+        ]}})
+    end
+  end
+
+  describe ".known_sink_pads/0" do
+    it "should return one always available pad with all supported caps" do
+      expect(described_module.known_sink_pads).to eq(%{
+        :source => {:always, [
+          %Membrane.Caps.Audio.Raw{format: :s8},
+          %Membrane.Caps.Audio.Raw{format: :u8},
+        ]}})
+    end
+  end
+
   describe ".handle_buffer/2" do
     let :channels, do: 2
     let :format, do: :s16le

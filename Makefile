@@ -10,4 +10,4 @@ darwin_encoder:
 	clang -arch x86_64 -O3 -mssse3 -fPIC -I../membrane_common_c/include -I./deps/membrane_common_c/include -isysroot $(OSX_SDK_PATH) -framework Lame -dynamiclib -undefined dynamic_lookup -I$(ERL_INCLUDE_PATH_DARWIN) -o membrane_element_lame_encoder.so c_src/encoder.c
 
 linux_encoder:
-	cc -O3 -mssse3 -fPIC -L/usr/local/lib-I../membrane_common_c/include -I./deps/membrane_common_c/include -I$(ERL_INCLUDE_PATH_LINUX) -rdynamic -undefined -shared -o membrane_element_lame_encoder.so c_src/encoder.c -lmp3lame
+	cc -O3 -mssse3 -fPIC -L/usr/local/lib -I../membrane_common_c/include -I./deps/membrane_common_c/include -I$(ERL_INCLUDE_PATH_LINUX) -rdynamic -undefined -shared -o membrane_element_lame_encoder.so c_src/encoder.c -lmp3lame

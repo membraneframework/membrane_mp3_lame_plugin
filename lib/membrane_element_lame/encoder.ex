@@ -6,14 +6,14 @@ defmodule Membrane.Element.Lame.Encoder do
 
 
   def_known_source_pads %{
-    :sink => {:always, [
+    :source => {:always, [
       %Raw{format: :s8},
       %Raw{format: :u8},
     ]}
   }
 
   def_known_sink_pads %{
-    :source => {:always, [
+    :sink => {:always, [
       %Raw{format: :s8},
       %Raw{format: :u8},
     ]}

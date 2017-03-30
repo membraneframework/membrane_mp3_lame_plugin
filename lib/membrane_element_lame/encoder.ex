@@ -31,7 +31,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
 
   @doc false
-  def handle_caps({:sink, caps}, state) do
+  def handle_caps(:sink, caps, state) do
 
     case EncoderNative.create() do
       {:ok, native} ->

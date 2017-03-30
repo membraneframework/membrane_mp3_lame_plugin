@@ -46,9 +46,8 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @doc false
-  def handle_buffer({:sink, %Membrane.Buffer{payload: payload} = _buffer}, %{native: native, queue: queue, caps: caps} = state) do
+  def handle_buffer(:sink, _caps, %Membrane.Buffer{payload: payload} = _buffer, %{native: native, queue: queue, caps: %Raw{format: format, channels: channels} = caps} = state) do
     bitstring = queue <> payload
-    %Raw{format: format, channels: channels} = caps
     {:ok, bytes_per_sample} = Raw.format_to_sample_size(format)
     sample_size = bytes_per_sample * channels
     nof_full_samples = byte_size(bitstring) |> div(sample_size)

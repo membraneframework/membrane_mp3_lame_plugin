@@ -3,12 +3,12 @@ defmodule Membrane.Element.Lame.EncoderNative do
   This module is an interface to native lame encoder.
   """
 
-
+  require Bundlex.Loader
   @on_load :load_nifs
 
   @doc false
   def load_nifs do
-    :ok = :erlang.load_nif('./membrane_element_lame_encoder', 0)
+    Bundlex.Loader.load_lib_nif!(:membrane_element_lame, :membrane_element_lame_encoder)
   end
 
 

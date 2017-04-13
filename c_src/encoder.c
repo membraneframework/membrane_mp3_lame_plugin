@@ -210,9 +210,9 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ErlNifFunc nif_funcs[] =
 {
-  {"create", 0, export_create},
-  {"encode_buffer", 4, export_encode_buffer},
-  {"destroy", 1, export_destroy}
+  {"create", 0, export_create, 0},
+  {"encode_buffer", 4, export_encode_buffer, 0},
+  {"destroy", 1, export_destroy, 0}
 };
 
 ERL_NIF_INIT(Elixir.Membrane.Element.Lame.EncoderNative, nif_funcs, load, NULL, NULL, NULL)

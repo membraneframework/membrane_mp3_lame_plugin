@@ -50,7 +50,7 @@ config :membrane_element_lame, :bundlex_lib,
     nif: [
       membrane_element_lame_encoder: [
         includes: [
-          "../membrane_common_c/include",
+          "../membrane_common_c/c_src/",
           "./deps/membrane_common_c/c_src",
           "/usr/lib/erlang/erts-8.3/include/"
         ],

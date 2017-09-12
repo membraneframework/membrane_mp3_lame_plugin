@@ -1,84 +1,95 @@
 defmodule Membrane.Element.Lame.Encoder do
   use Membrane.Element.Base.Filter
-  alias Membrane.Element.Lame.EncoderOptions
+  alias Membrane.Element.Lame.Encoder.Options
   alias Membrane.Element.Lame.EncoderNative
   alias Membrane.Caps.Audio.Raw
+  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.Buffer
+  use Membrane.Mixins.Log, tags: :membrane_element_lame
 
 
   def_known_source_pads %{
-    :source => {:always, [
-      %Raw{format: :s8},
-      %Raw{format: :u8},
+    :source => {:always, :pull, [
+      %MPEG{
+        channels: 2,
+        sample_rate: 44100,
+      }
     ]}
   }
 
   def_known_sink_pads %{
-    :sink => {:always, [
-      %Raw{format: :s8},
-      %Raw{format: :u8},
+    :sink => {:always, {:pull, demand_in: :bytes}, [
+      %Raw{
+        format: :s24le,
+        sample_rate: 44100,
+        channels: 2,
+      }
     ]}
   }
 
 
   @doc false
-  def handle_init(%EncoderOptions{}) do
+  def handle_init(%Options{} = options) do
     {:ok, %{
       native: nil,
-      queue: << >>,
-      caps: nil,
+      queue: <<>>,
     }}
   end
-
+  
+  @doc false
+  def handle_prepare(:stopped, state) do
+    with {:ok, native} <- EncoderNative.create
+    do
+      caps = %MPEG{channels: 2, sample_rate: 44100}
+      {{:ok, caps: {:source, :any}}, %{state | native: native}}
+    else
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+  def handle_prepare(_, state), do: {:ok, state}
 
   @doc false
-  def handle_caps(:sink, caps, state) do
+  def handle_demand(:source, _size, _unit, state) do
+    {{:ok, demand: :sink}, state}
+  end
 
-    case EncoderNative.create() do
-      {:ok, native} ->
-        {:ok, %{state |
-          caps: caps,
-          native: native,
-          queue: << >> }}
+  @doc false
+  def handle_process1(:sink, %Buffer{payload: data} = buffer, _, %{native: native, queue: queue} = state) do
+    to_encode = queue <> data
+    with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0
+      <- encode_buffer(native, to_encode)
+    do
+      << _handled :: binary-size(bytes_used), rest :: binary >> = to_encode
+
+      {{:ok, buffer: {:source, %Buffer{buffer | payload: encoded_audio}}}, %{ state | queue: rest }}
+    else
+      {:ok, {<<>>, 0}} -> {:ok, %{state | queue: to_encode}}
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  defp encode_buffer(native, buffer) do
+    encode_buffer(native, buffer, <<>>, 0)
+  end
+
+  defp encode_buffer(_native, <<>>, acc, bytes_used) do
+    {:ok, {acc, bytes_used}}
+  end
+
+  defp encode_buffer(native, buffer, acc, bytes_used) when byte_size(buffer) > 0 do
+    with {:ok, {encoded_frame, frame_size}}
+      <- EncoderNative.encoded_frame(native, buffer)
+    do
+      << _used :: binary-size(frame_size), rest :: binary >> = encoded_frame
+
+      encode_buffer(native, rest, acc <> encoded_frame, bytes_used + frame_size)
+    else
+      {:error, :buflen} ->
+        {:ok, {acc, bytes_used}}
 
       {:error, reason} ->
+        warn_error "Terminating stream becouse of malformed frame", reason
         {:error, reason}
     end
-  end
-
-  @doc false
-  def handle_buffer(:sink, _caps, %Membrane.Buffer{payload: payload} = _buffer, %{native: native, queue: queue, caps: %Raw{format: format, channels: channels} = caps} = state) do
-    bitstring = queue <> payload
-    {:ok, bytes_per_sample} = Raw.format_to_sample_size(format)
-    sample_size = bytes_per_sample * channels
-    nof_full_samples = byte_size(bitstring) |> div(sample_size)
-    full_sample_in_bytes = nof_full_samples * sample_size
-    #TODO unit should probably be dependant on size of one sample
-
-    <<full_buffer::binary-size(full_sample_in_bytes)-unit(8), new_remainder::binary>> = bitstring
-
-    # Split the buffer into left and right channel
-    {left_buffer, right_buffer} = split_buffer(full_buffer, bytes_per_sample)
-
-    case EncoderNative.encode_buffer(native, left_buffer, right_buffer, nof_full_samples) do
-      {:error, desc} -> {:error, desc}
-      {:ok, encoded_audio} ->
-        IO.inspect "#{encoded_audio}"
-        {:ok, [{:send, {:source, encoded_audio}}], %{state | queue: new_remainder}}
-    end
-  end
-
-  @doc false
-  defp split_buffer(buffer, sample_size) do
-    split_buffer(buffer, sample_size, <<>>, <<>>)
-  end
-
-  @doc false
-  defp split_buffer(<<>>, _sample_size, left_buffer, right_buffer) do
-    {left_buffer, right_buffer}
-  end
-
-  defp split_buffer(buffer, sample_size, left_buffer, right_buffer) do
-    <<left_sample::binary-size(sample_size)-unit(8), right_sample::binary-size(sample_size)-unit(8), rest_of_buffer::binary>> = buffer
-    split_buffer(rest_of_buffer, sample_size, left_buffer <> left_sample, right_buffer <> right_sample)
   end
 end

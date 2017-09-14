@@ -14,11 +14,15 @@
 #define MALLOC_PROBLEM              -2
 #define LAME_INIT_PARAMS_NOT_CALLED -3
 #define PSYCHO_ACOUSTIC_PROBLEMS    -4
+#define UNUSED(x) (void)(x)
 
 ErlNifResourceType *RES_ENCODER_HANDLE_TYPE;
+const int SAMPLE_SIZE = 4;
+const int SAMPLES_PER_FRAME = 1152;
 
 
 void res_encoder_handle_destructor(ErlNifEnv *env, void *value) {
+  UNUSED(env);
   EncoderHandle *handle = (EncoderHandle *) value;
   MEMBRANE_DEBUG("Destroying EncoderHandle %p", handle);
 
@@ -32,6 +36,8 @@ void res_encoder_handle_destructor(ErlNifEnv *env, void *value) {
 
 
 int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
+  UNUSED(priv_data);
+  UNUSED(load_info);
   int flags = ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER;
   RES_ENCODER_HANDLE_TYPE =
     enif_open_resource_type(env, NULL, "EncoderHandle", res_encoder_handle_destructor, flags, NULL);
@@ -55,18 +61,36 @@ int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
  */
 static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+  UNUSED(argc);
+  UNUSED(argv);
   EncoderHandle *handle;
+  int bitrate = 0;
+  int channels = 0;
+  int quality = 0;
   lame_global_flags *gfp;
+ 
+  if(!enif_get_int(env, argv[0], &channels)) {
+    return membrane_util_make_error_args(env, "args", "Invalid number of channels");
+  }
+  if(!enif_get_int(env, argv[1], &bitrate)) {
+    return membrane_util_make_error_args(env, "args", "Invalid bitrate value");
+  }
+  if(!enif_get_int(env, argv[2], &quality)) {
+    return membrane_util_make_error_args(env, "args", "Invalid quality");
+  }
+  if(sizeof(int) != 4) {
+    return membrane_util_make_error(env, enif_make_string(env, "invalid int size", ERL_NIF_LATIN1));
+  }
+
 
   // TODO - argument validation
 
   gfp = lame_init();
 
-  lame_set_num_channels(gfp, 2);
+  lame_set_num_channels(gfp, channels);
   lame_set_in_samplerate(gfp, 44100);
-  lame_set_brate(gfp, 128);
-  lame_set_mode(gfp, 1);
-  lame_set_quality(gfp, 2);   /* 2=high  5 = medium  7=low */
+  lame_set_brate(gfp, bitrate);
+  lame_set_quality(gfp, quality);   /* 2=high  5 = medium  7=low */
 
   int error = lame_init_params(gfp);
   if (error)
@@ -79,8 +103,11 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
   MEMBRANE_DEBUG("Initialized EncoderHandle %p", handle);
 
+
+  handle->max_mp3buffer_size = 1.25 * SAMPLES_PER_FRAME + 7200;
   handle->gfp = gfp;
-  handle->mp3buffer = NULL;
+  handle->mp3buffer = malloc(handle->max_mp3buffer_size);
+  handle->channels = channels;
 
   // Prepare return term
   ERL_NIF_TERM encoder_term = enif_make_resource(env, handle);
@@ -105,12 +132,11 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
  *
  * On internal error, returns `{:error, {:internal, reason}}`.
  */
-static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM export_encode_frame(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+  UNUSED(argc);
   EncoderHandle*        handle;
-  ErlNifBinary          left_buffer;
-  ErlNifBinary          right_buffer;
-  int                   num_of_samples;
+  ErlNifBinary          buffer;
 
   // Get resource arg
   if(!enif_get_resource(env, argv[0], RES_ENCODER_HANDLE_TYPE, (void **) &handle)) {
@@ -118,29 +144,33 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
   }
 
   // Get data arg
-  if(!enif_inspect_binary(env, argv[1], &left_buffer)) {
+  if(!enif_inspect_binary(env, argv[1], &buffer)) {
     return membrane_util_make_error_args(env, "data", "Given data for left channel is not valid binary");
-  }
-  if(!enif_inspect_binary(env, argv[2], &right_buffer)) {
-    return membrane_util_make_error_args(env, "data", "Given data for right channel is not valid binary");
-  }
-
-  if(!enif_get_int(env, argv[3], &num_of_samples)) {
-    return membrane_util_make_error_args(env, "data", "Given data for number of samples is not valid");
   }
 
   // This is worst case calculation, should be changed to more precise one
-  int max_mp3buffer_size = 1.25 * num_of_samples + 7200;
+  int num_of_samples = buffer.size / (handle->channels * SAMPLE_SIZE); 
+  if (num_of_samples < SAMPLES_PER_FRAME){
+    return membrane_util_make_error(env, enif_make_atom(env ,"buflen"));
+  }
+  
+  int *samples = (int*) buffer.data;
+  int *left_samples = malloc(num_of_samples * sizeof(int));
+  int *right_samples = malloc(num_of_samples * sizeof(int));
 
-  handle->mp3buffer = malloc(max_mp3buffer_size);
+
+  for (int i = 0; i < num_of_samples; i++) {
+    left_samples[i] = samples[i*2];
+    right_samples[i] = samples[i*2+1];
+  }
 
   // Encode the buffer
-  int result = lame_encode_buffer(handle->gfp,
-                                  (const short int*)&left_buffer,
-                                  (const short int*)&right_buffer,
+  int result = lame_encode_buffer_int(handle->gfp,
+                                  left_samples,
+                                  right_samples,
                                   num_of_samples,
                                   handle->mp3buffer,
-                                  max_mp3buffer_size);
+                                  handle->max_mp3buffer_size);
 
   switch (result)
   {
@@ -165,14 +195,13 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
       break;
   }
 
-  // Prepare data for returned terms
-  ERL_NIF_TERM output_data;
+  ERL_NIF_TERM encoded_frame;
 
   // Move encoded data to fit buffer
-  char* outputbuffer = enif_make_new_binary(env, result, &output_data);
+  unsigned char* outputbuffer = enif_make_new_binary(env, result, &encoded_frame);
   memcpy(outputbuffer, handle->mp3buffer, result);
 
-  return membrane_util_make_ok_tuple(env, output_data);
+  return membrane_util_make_ok_tuple(env, encoded_frame);
 }
 
 
@@ -189,6 +218,7 @@ static ERL_NIF_TERM export_encode_buffer(ErlNifEnv* env, int argc, const ERL_NIF
  */
 static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+  UNUSED(argc);
   EncoderHandle* handle;
 
   // Get resource arg
@@ -210,8 +240,8 @@ static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
 static ErlNifFunc nif_funcs[] =
 {
-  {"create", 0, export_create, 0},
-  {"encode_buffer", 4, export_encode_buffer, 0},
+  {"create", 3, export_create, 0},
+  {"encode_frame", 2, export_encode_frame, 0},
   {"destroy", 1, export_destroy, 0}
 };
 

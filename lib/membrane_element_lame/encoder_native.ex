@@ -16,9 +16,9 @@ defmodule Membrane.Element.Lame.EncoderNative do
   Creates encoder.
 
   It accepts three arguments:
-
-  - format - atom representing raw sample format,
-    (TODO: big endian is not working),
+  - number of channels
+  - bitrate
+  - quality
 
   On success, returns `{:ok, resource}`.
 
@@ -26,11 +26,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
 
   On encoder initialization error, returns `{:error, {:internal, reason}}`.
   """
-  @spec create() ::
+  @spec create(integer, integer, atom) ::
   {:ok, any} |
   {:error, {:args, atom, String.t}} |
   {:error, {:internal, atom}}
-  def create(), do: raise "NIF fail"
+  def create(_channel, _bitrate, _quality), do: raise "NIF fail"
 
 
   @doc """
@@ -48,11 +48,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
 
   On internal error, returns `{:error, {:internal, reason}}`.
   """
-  @spec encode_buffer(any, bitstring, bitstring, integer) ::
+  @spec encode_frame(any, bitstring) ::
     {:ok, bitstring} |
     {:error, {:args, atom, String.t}} |
     {:error, {:internal, atom}}
-  def encode_buffer(_encoder, _data1, _data2, _bytes_per_sample), do: raise "NIF fail"
+  def encode_frame(_encoder, _buffer), do: raise "NIF fail"
 
 
   @doc """

@@ -1,7 +1,9 @@
-%{"bundlex": {:git, "git@github.com:radiokit/bundlex.git", "5b7bcea58c7f09c4c2d94e0b9fa0a434eddaf74d", []},
+%{"bundlex": {:git, "git@github.com:radiokit/bundlex.git", "8150b3167c5da5ef1ccb33aa2c3da08264dd8311", []},
   "espec": {:hex, :espec, "1.1.2", "d1cf60ee8f6fb8b0f1593097958762f870949238b0aa15788201728cb6e672dd", [:mix], [{:meck, "~> 0.8.4", [hex: :meck, optional: false]}]},
-  "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []},
-  "membrane_caps_audio_raw": {:git, "git@github.com:membraneframework/membrane-caps-audio-raw.git", "0968a5e95a7153b517bec3b2d1e0f1055b2a385c", []},
+  "meck": {:hex, :meck, "0.8.8", "eeb3efe811d4346e1a7f65b2738abc2ad73cbe1a2c91b5dd909bac2ea0414fa6", [:rebar3], []},
+  "membrane_caps_audio_mpeg": {:git, "git@github.com:membraneframework/membrane-caps-audio-mpeg.git", "4f29dec1b3058cdf1d113484240569b64d4334b2", []},
+  "membrane_caps_audio_raw": {:git, "git@github.com:membraneframework/membrane-caps-audio-raw.git", "8fd9c1c7a33a46b544ca857581fdcd20b08f55e2", []},
   "membrane_common_c": {:git, "git@github.com:membraneframework/membrane-common-c.git", "d059c36fb87f0aca17beebd2ce83cf056aba94bb", []},
-  "membrane_core": {:git, "git@github.com:membraneframework/membrane-core.git", "80ec0a624333fe249a87e87582f15bd1cb158b53", []},
-  "porcelain": {:hex, :porcelain, "2.0.3", "2d77b17d1f21fed875b8c5ecba72a01533db2013bd2e5e62c6d286c029150fdc", [:mix], []}}
+  "membrane_core": {:git, "git@github.com:membraneframework/membrane-core.git", "63465b0a0d59f75b99a809aa57f4e1e6bafc5b60", [branch: "feature/pull"]},
+  "porcelain": {:hex, :porcelain, "2.0.3", "2d77b17d1f21fed875b8c5ecba72a01533db2013bd2e5e62c6d286c029150fdc", [:mix], []},
+  "qex": {:hex, :qex, "0.3.3", "d1c038de10308dcc489b9e2f50ebb019b2ffecb1753a4f1535f24b6b702491b0", [:mix], []}}

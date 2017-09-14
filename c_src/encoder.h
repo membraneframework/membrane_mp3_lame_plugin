@@ -20,7 +20,9 @@ typedef struct _EncoderHandle EncoderHandle;
 struct _EncoderHandle
 {
     lame_global_flags* gfp;
-    char*              mp3buffer;
+    unsigned char* mp3buffer;
+    int channels;
+    int max_mp3buffer_size;
 };
 
 #endif

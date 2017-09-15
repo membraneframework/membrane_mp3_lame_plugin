@@ -9,6 +9,7 @@ config :membrane_element_lame, :bundlex_lib,
           "./deps/membrane_common_c/c_src",
         ],
         sources: [
+          "../../membrane_common_c/c_src/membrane/log.c",
           "encoder.c",
         ],
         libs: [
@@ -60,6 +61,7 @@ config :membrane_element_lame, :bundlex_lib,
           "./deps/membrane_common_c/c_src",
         ],
         sources: [
+          "../../membrane_common_c/c_src/membrane/log.c",
           "encoder.c",
         ],
         libs: [

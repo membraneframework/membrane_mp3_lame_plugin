@@ -15,6 +15,8 @@ defmodule Membrane.Element.Lame.Encoder do
       %MPEG{
         channels: 2,
         sample_rate: 44100,
+        layer: :layer3,
+        version: :v1,
       }
     ]}
   }
@@ -22,7 +24,7 @@ defmodule Membrane.Element.Lame.Encoder do
   def_known_sink_pads %{
     :sink => {:always, {:pull, demand_in: :bytes}, [
       %Raw{
-        format: :s24le,
+        format: :s32le,
         sample_rate: 44100,
         channels: 2,
       }
@@ -47,7 +49,7 @@ defmodule Membrane.Element.Lame.Encoder do
       state[:options].bitrate,
       Options.map_quality_to_value(state[:options].quality))
     do
-      caps = %MPEG{channels: 2, sample_rate: 44100}
+      caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
     else
       {:error, reason} -> 
@@ -67,6 +69,10 @@ defmodule Membrane.Element.Lame.Encoder do
 
   def handle_event(:sink, event, opts, state) do 
     IO.inspect {:eventreceived, event, opts }
+    {:ok, state}
+  end
+
+  def handle_caps(:sink, _, _, state) do
     {:ok, state}
   end
   

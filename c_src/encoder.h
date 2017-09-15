@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <erl_nif.h>
 #include <lame/lame.h>
+#include <membrane/log.h>
+#include <membrane/membrane.h>
 
 typedef struct _EncoderHandle EncoderHandle;
 

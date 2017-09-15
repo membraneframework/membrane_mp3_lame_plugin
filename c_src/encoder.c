@@ -7,7 +7,6 @@
 
 #include "encoder.h"
 #include <string.h>
-#include <membrane/membrane.h>
 
 
 #define MP3_BUFFER_TOO_SMALL        -1
@@ -24,7 +23,7 @@ const int SAMPLES_PER_FRAME = 1152;
 void res_encoder_handle_destructor(ErlNifEnv *env, void *value) {
   UNUSED(env);
   EncoderHandle *handle = (EncoderHandle *) value;
-  MEMBRANE_DEBUG("Destroying EncoderHandle %p", handle);
+  MEMBRANE_DEBUG(env, "Destroying EncoderHandle %p", handle);
 
   if (handle->mp3buffer != NULL)
   {
@@ -101,7 +100,7 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
   // Initialize handle
   handle = enif_alloc_resource(RES_ENCODER_HANDLE_TYPE, sizeof(EncoderHandle));
 
-  MEMBRANE_DEBUG("Initialized EncoderHandle %p", handle);
+  MEMBRANE_DEBUG(env, "Initialized EncoderHandle %p", handle);
 
 
   handle->max_mp3buffer_size = 1.25 * SAMPLES_PER_FRAME + 7200;

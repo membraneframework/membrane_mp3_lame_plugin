@@ -58,8 +58,12 @@ defmodule Membrane.Element.Lame.Encoder do
   end
   def handle_prepare(_, state), do: {:ok, state}
 
-  def handle_demand(:source, size, _unit, _, state) do
+  def handle_demand(:source, size, :bytes, _, state) do
     {{:ok, demand: {:sink, size * 10}}, state}
+  end
+
+  def handle_demand(:source, size, :buffers, _, state) do
+    {{:ok, demand: {:sink, 100000}}, state}
   end
 
   def handle_event(:sink, %Membrane.Event{type: :eos}, _, state) do
@@ -84,17 +88,17 @@ defmodule Membrane.Element.Lame.Encoder do
     do
       << _handled :: binary-size(bytes_used), rest :: binary >> = to_encode
 
-      buffer = [ buffer: {:source, %Buffer{buffer | payload: encoded_audio}} ]
+      buffers = Enum.reverse encoded_audio
       event = if byte_size(rest) == 0 && eos do
-        IO.inspect "EOS send"
+        debug "EOS send"
         [ event: {:source, Membrane.Event.eos()}]
       else
         []
       end
 
-      {{:ok, buffer ++ event}, %{ state | queue: rest }}
+      {{:ok, buffers ++ event}, %{ state | queue: rest }}
     else
-      {:ok, {<<>>, 0}} -> {:ok, %{state | queue: to_encode}}
+      {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -102,7 +106,7 @@ defmodule Membrane.Element.Lame.Encoder do
   # init
   defp encode_buffer(native, buffer, %{options: options} = state) do
     raw_frame_size = @samples_per_frame * @sample_size * options.channels
-    encode_buffer(native, buffer, <<>>, 0, raw_frame_size, state[:eos])
+    encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos])
   end
 
   # handle single frame
@@ -115,7 +119,9 @@ defmodule Membrane.Element.Lame.Encoder do
     with {:ok, encoded_frame}
       <- EncoderNative.encode_frame(native, raw_frame)
     do
-      encode_buffer(native, rest, acc <> encoded_frame, bytes_used + raw_frame_size, raw_frame_size, is_eos)
+      frame_size = min(byte_size(buffer),raw_frame_size)
+      encoded_buffer = {:buffer, {:source, %Buffer{ payload: encoded_frame}}}
+      encode_buffer(native, rest, [encoded_buffer | acc], bytes_used + frame_size, raw_frame_size, is_eos)
     else
       {:error, :buflen} ->
         {:ok, {acc, bytes_used}}

@@ -41,7 +41,7 @@ defmodule Membrane.Element.Lame.Encoder do
       eos: false,
     }}
   end
-  
+
   @doc false
   def handle_prepare(:stopped, state) do
     with {:ok, native} <- EncoderNative.create(
@@ -52,7 +52,7 @@ defmodule Membrane.Element.Lame.Encoder do
       caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
     else
-      {:error, reason} -> 
+      {:error, reason} ->
         {{:error, reason}, state}
     end
   end
@@ -66,20 +66,17 @@ defmodule Membrane.Element.Lame.Encoder do
     {{:ok, demand: {:sink, 100000}}, state}
   end
 
-  def handle_event(:sink, %Membrane.Event{type: :eos}, _, state) do
-    IO.inspect "EOS received"
-    {:ok, %{state | eos: true }}
+  def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
+    super :sink, evt, params, %{state | eos: true}
   end
-
-  def handle_event(:sink, event, opts, state) do 
-    IO.inspect {:eventreceived, event, opts }
-    {:ok, state}
+  def handle_event(:sink, evt, params, state) do
+    super :sink, evt, params, state
   end
 
   def handle_caps(:sink, _, _, state) do
     {:ok, state}
   end
-  
+
   @doc false
   def handle_process1(:sink, %Buffer{payload: data} = buffer, _, %{native: native, queue: queue, eos: eos} = state) do
     to_encode = queue <> data
@@ -136,5 +133,5 @@ defmodule Membrane.Element.Lame.Encoder do
   defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size, false) do
     {:ok, {acc, bytes_used}}
   end
-  
+
 end

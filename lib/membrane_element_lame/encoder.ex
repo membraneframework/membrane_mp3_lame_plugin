@@ -59,11 +59,11 @@ defmodule Membrane.Element.Lame.Encoder do
   def handle_prepare(_, state), do: {:ok, state}
 
   def handle_demand(:source, size, :bytes, _, state) do
-    {{:ok, demand: {:sink, size * 10}}, state}
+    {{:ok, demand: {:sink, size}}, state}
   end
 
   def handle_demand(:source, size, :buffers, _, state) do
-    {{:ok, demand: {:sink, 100000}}, state}
+    {{:ok, demand: {:sink, size * 5000}}, state}
   end
 
   def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
@@ -78,7 +78,7 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @doc false
-  def handle_process1(:sink, %Buffer{payload: data} = buffer, _, %{native: native, queue: queue, eos: eos} = state) do
+  def handle_process1(:sink, %Buffer{payload: data}, _, %{native: native, queue: queue, eos: eos} = state) do
     to_encode = queue <> data
     with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0
       <- encode_buffer(native, to_encode, state)

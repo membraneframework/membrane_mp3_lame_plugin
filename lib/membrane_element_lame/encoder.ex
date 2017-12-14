@@ -69,8 +69,8 @@ defmodule Membrane.Element.Lame.Encoder do
   def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
     super :sink, evt, params, %{state | eos: true}
   end
-  def handle_event(:sink, evt, params, state) do
-    super :sink, evt, params, state
+  def handle_event(pad, evt, params, state) do
+    super pad, evt, params, state
   end
 
   def handle_caps(:sink, _, _, state) do

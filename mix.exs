@@ -17,7 +17,7 @@ defmodule Membrane.Element.Lame.Mixfile do
   end
 
   def application do
-    [applications: [
+    [extra_applications: [
       :membrane_core
     ], mod: {Membrane.Element.Lame, []}]
   end

@@ -67,7 +67,7 @@ static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
   int channels = 0;
   int quality = 0;
   lame_global_flags *gfp;
- 
+
   if(!enif_get_int(env, argv[0], &channels)) {
     return membrane_util_make_error_args(env, "args", "Invalid number of channels");
   }
@@ -148,11 +148,11 @@ static ERL_NIF_TERM export_encode_frame(ErlNifEnv* env, int argc, const ERL_NIF_
   }
 
   // This is worst case calculation, should be changed to more precise one
-  int num_of_samples = buffer.size / (handle->channels * SAMPLE_SIZE); 
+  int num_of_samples = buffer.size / (handle->channels * SAMPLE_SIZE);
   if (num_of_samples < SAMPLES_PER_FRAME){
     return membrane_util_make_error(env, enif_make_atom(env ,"buflen"));
   }
-  
+
   int *samples = (int*) buffer.data;
   int *left_samples = malloc(num_of_samples * sizeof(int));
   int *right_samples = malloc(num_of_samples * sizeof(int));
@@ -170,6 +170,9 @@ static ERL_NIF_TERM export_encode_frame(ErlNifEnv* env, int argc, const ERL_NIF_
                                   num_of_samples,
                                   handle->mp3buffer,
                                   handle->max_mp3buffer_size);
+
+  free(left_samples);
+  free(right_samples);
 
   switch (result)
   {

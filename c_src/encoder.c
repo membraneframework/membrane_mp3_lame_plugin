@@ -147,15 +147,14 @@ static ERL_NIF_TERM export_encode_frame(ErlNifEnv* env, int argc, const ERL_NIF_
     return membrane_util_make_error_args(env, "data", "Given data for left channel is not valid binary");
   }
 
-  // This is worst case calculation, should be changed to more precise one
   int num_of_samples = buffer.size / (handle->channels * SAMPLE_SIZE);
   if (num_of_samples < SAMPLES_PER_FRAME){
     return membrane_util_make_error(env, enif_make_atom(env ,"buflen"));
   }
 
   int *samples = (int*) buffer.data;
-  int *left_samples = malloc(num_of_samples * sizeof(int));
-  int *right_samples = malloc(num_of_samples * sizeof(int));
+  int *left_samples = malloc(num_of_samples * SAMPLE_SIZE);
+  int *right_samples = malloc(num_of_samples * SAMPLE_SIZE);
 
 
   for (int i = 0; i < num_of_samples; i++) {

@@ -65,7 +65,6 @@ config :membrane_element_lame, :bundlex_lib,
           "encoder.c",
         ],
         libs: [
-          "mp3lame"
         ],
         pkg_configs: [
           "lame"

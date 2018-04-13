@@ -10,10 +10,11 @@ defmodule Membrane.Element.Lame.Encoder do
   use Membrane.Mixins.Log, tags: :membrane_element_lame
 
   @samples_per_frame 1152
+  @channels 2
   @sample_size 4
 
   def_options \
-    bitrate: [type: :integer, default: 41, description: "Bitrate in kbit/sec"],
+    bitrate: [type: :integer, default: 192, description: "Bitrate in kbit/sec"],
     quality: [type: :atom, default: :medium, description: "Quality of the encoded audio. One of: :low, :medium, :high"]
 
 
@@ -39,23 +40,22 @@ defmodule Membrane.Element.Lame.Encoder do
   }
 
 
-  @doc false
+  @impl true
   def handle_init(%Encoder{} = options) do
     {:ok, %{
       native: nil,
       queue: <<>>,
-      channels: 2,
       options: options,
       eos: false,
     }}
   end
 
-  @doc false
+  @impl true
   def handle_prepare(:stopped, state) do
     with {:ok, native} <- EncoderNative.create(
-      state.channels,
+      @channels,
       state[:options].bitrate,
-      9)
+      state[:options].quality |> map_quality_to_value)
     do
       caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
@@ -66,6 +66,7 @@ defmodule Membrane.Element.Lame.Encoder do
   end
   def handle_prepare(_, state), do: {:ok, state}
 
+  @impl true
   def handle_demand(:source, size, :bytes, _, state) do
     {{:ok, demand: {:sink, size}}, state}
   end
@@ -74,6 +75,7 @@ defmodule Membrane.Element.Lame.Encoder do
     {{:ok, demand: {:sink, size * 5000}}, state}
   end
 
+  @impl true
   def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
     super :sink, evt, params, %{state | eos: true}
   end
@@ -81,11 +83,12 @@ defmodule Membrane.Element.Lame.Encoder do
     super pad, evt, params, state
   end
 
+  @impl true
   def handle_caps(:sink, _, _, state) do
     {:ok, state}
   end
 
-  @doc false
+  @impl true
   def handle_process1(:sink, %Buffer{payload: data}, _, %{native: native, queue: queue, eos: eos} = state) do
     to_encode = queue <> data
     with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0
@@ -109,14 +112,14 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   # init
-  defp encode_buffer(native, buffer, %{options: options} = state) do
-    raw_frame_size = @samples_per_frame * @sample_size * state.channels
+  defp encode_buffer(native, buffer, state) do
+    raw_frame_size = @samples_per_frame * @sample_size * @channels
     encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos])
   end
 
   # handle single frame
   defp encode_buffer(native, buffer, acc, bytes_used, raw_frame_size, is_eos)
-  when byte_size(buffer) > raw_frame_size or is_eos do
+  when byte_size(buffer) >= raw_frame_size or is_eos do
     { raw_frame, rest } = case buffer do
       << used :: binary-size(raw_frame_size), rest :: binary >> -> {used, rest}
       << partial :: binary >> -> {partial, <<>>}

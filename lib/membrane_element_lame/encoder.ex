@@ -1,7 +1,9 @@
 defmodule Membrane.Element.Lame.Encoder do
+  @moduledoc """
+  Element encoding raw audio into MPEG-1, layer 3 format
+  """
   use Membrane.Element.Base.Filter
-  alias Membrane.Element.Lame.Encoder.Options
-  alias Membrane.Element.Lame.EncoderNative
+  alias Membrane.Element.Lame.{EncoderNative, Encoder}
   alias Membrane.Caps.Audio.Raw
   alias Membrane.Caps.Audio.MPEG
   alias Membrane.Buffer
@@ -10,33 +12,39 @@ defmodule Membrane.Element.Lame.Encoder do
   @samples_per_frame 1152
   @sample_size 4
 
+  def_options \
+    bitrate: [type: :integer, default: 41, description: "Bitrate in kbit/sec"],
+    quality: [type: :atom, default: :medium, description: "Quality of the encoded audio. One of: :low, :medium, :high"]
+
+
   def_known_source_pads %{
-    :source => {:always, :pull, [
-      %MPEG{
+    :source => {:always, :pull, {
+      MPEG,
         channels: 2,
         sample_rate: 44100,
         layer: :layer3,
         version: :v1,
       }
-    ]}
+    }
   }
 
   def_known_sink_pads %{
-    :sink => {:always, {:pull, demand_in: :bytes}, [
-      %Raw{
+    :sink => {:always, {:pull, demand_in: :bytes}, {
+      Raw,
         format: :s32le,
         sample_rate: 44100,
         channels: 2,
       }
-    ]}
+    }
   }
 
 
   @doc false
-  def handle_init(%Options{} = options) do
+  def handle_init(%Encoder{} = options) do
     {:ok, %{
       native: nil,
       queue: <<>>,
+      channels: 2,
       options: options,
       eos: false,
     }}
@@ -45,9 +53,9 @@ defmodule Membrane.Element.Lame.Encoder do
   @doc false
   def handle_prepare(:stopped, state) do
     with {:ok, native} <- EncoderNative.create(
-      state[:options].channels,
+      state.channels,
       state[:options].bitrate,
-      Options.map_quality_to_value(state[:options].quality))
+      9)
     do
       caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
@@ -102,7 +110,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
   # init
   defp encode_buffer(native, buffer, %{options: options} = state) do
-    raw_frame_size = @samples_per_frame * @sample_size * options.channels
+    raw_frame_size = @samples_per_frame * @sample_size * state.channels
     encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos])
   end
 
@@ -134,4 +142,9 @@ defmodule Membrane.Element.Lame.Encoder do
     {:ok, {acc, bytes_used}}
   end
 
+  defp map_quality_to_value(:low), do: 7
+  defp map_quality_to_value(:medium), do: 5
+  defp map_quality_to_value(:high), do: 2
+  defp map_quality_to_value(quality) when is_integer(quality) and quality >= 0 and quality <= 9, do: quality
+  defp map_quality_to_value(_), do: 5
 end

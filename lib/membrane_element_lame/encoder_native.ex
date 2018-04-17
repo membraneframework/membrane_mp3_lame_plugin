@@ -11,6 +11,7 @@ defmodule Membrane.Element.Lame.EncoderNative do
     Bundlex.Loader.load_lib_nif!(:membrane_element_lame, :membrane_element_lame_encoder)
   end
 
+
   @doc """
   Creates encoder.
 
@@ -26,10 +27,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
   On encoder initialization error, returns `{:error, {:internal, reason}}`.
   """
   @spec create(integer, integer, atom) ::
-          {:ok, any}
-          | {:error, {:args, atom, String.t()}}
-          | {:error, {:internal, atom}}
-  def create(_channel, _bitrate, _quality), do: raise("NIF fail")
+  {:ok, any} |
+  {:error, {:args, atom, String.t}} |
+  {:error, {:internal, atom}}
+  def create(_channel, _bitrate, _quality), do: raise "NIF fail"
+
 
   @doc """
   Encodes buffer.
@@ -47,10 +49,11 @@ defmodule Membrane.Element.Lame.EncoderNative do
   On internal error, returns `{:error, {:internal, reason}}`.
   """
   @spec encode_frame(any, bitstring) ::
-          {:ok, bitstring}
-          | {:error, {:args, atom, String.t()}}
-          | {:error, {:internal, atom}}
-  def encode_frame(_encoder, _buffer), do: raise("NIF fail")
+    {:ok, bitstring} |
+    {:error, {:args, atom, String.t}} |
+    {:error, {:internal, atom}}
+  def encode_frame(_encoder, _buffer), do: raise "NIF fail"
+
 
   @doc """
   Destroys the encoder.
@@ -66,8 +69,8 @@ defmodule Membrane.Element.Lame.EncoderNative do
   On internal error, returns `{:error, {:internal, reason}}`.
   """
   @spec destroy(any) ::
-          :ok
-          | {:error, {:args, atom, String.t()}}
-          | {:error, {:internal, atom}}
-  def destroy(_encoder), do: raise("NIF fail")
+    :ok |
+    {:error, {:args, atom, String.t}} |
+    {:error, {:internal, atom}}
+  def destroy(_encoder), do: raise "NIF fail"
 end

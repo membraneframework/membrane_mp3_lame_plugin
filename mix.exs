@@ -13,7 +13,7 @@ defmodule Membrane.Element.Lame.Mixfile do
       licenses: ["Apache 2.0"],
       name: "Membrane Element: Lame",
       source_url: "https://github.com/membraneframework/membrane-element-lame",
-      preferred_cli_env: [espec: :test],
+      preferred_cli_env: [espec: :test, format: :test],
       deps: deps()
     ]
   end

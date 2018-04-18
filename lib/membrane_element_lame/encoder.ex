@@ -50,7 +50,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
   @impl true
   def handle_prepare(:stopped, state) do
-    with quality_val <- state.options.quality |> map_quality_to_value,
+    with {:ok, quality_val} <- state.options.quality |> map_quality_to_value,
          {:ok, native} <-
            Native.create(
              @channels,
@@ -60,8 +60,9 @@ defmodule Membrane.Element.Lame.Encoder do
       caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
     else
-      :invalid_quality = reason ->
-        {{:error, reason}, state}
+      {:error, :invalid_quality} ->
+        {{:error, :invalid_quality}, state}
+
       {:error, reason} ->
         {{:error, reason}, state}
     end
@@ -154,8 +155,8 @@ defmodule Membrane.Element.Lame.Encoder do
         {:ok, {acc, bytes_used}}
 
       {:error, reason} ->
-         warn_error("Terminating stream because of malformed frame", reason)
-         {:error, reason}
+        warn_error("Terminating stream because of malformed frame", reason)
+        {:error, reason}
     end
   end
 
@@ -164,12 +165,12 @@ defmodule Membrane.Element.Lame.Encoder do
     {:ok, {acc, bytes_used}}
   end
 
-  defp map_quality_to_value(:low), do: 7
-  defp map_quality_to_value(:medium), do: 5
-  defp map_quality_to_value(:high), do: 2
+  defp map_quality_to_value(:low), do: {:ok, 7}
+  defp map_quality_to_value(:medium), do: {:ok, 5}
+  defp map_quality_to_value(:high), do: {:ok, 2}
 
   defp map_quality_to_value(quality) when is_integer(quality) and quality >= 0 and quality <= 9,
-    do: quality
+    do: {:ok, quality}
 
-  defp map_quality_to_value(_), do: :invalid_quality
+  defp map_quality_to_value(_), do: {:error, :invalid_quality}
 end

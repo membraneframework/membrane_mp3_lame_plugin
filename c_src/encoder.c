@@ -246,4 +246,4 @@ static ErlNifFunc nif_funcs[] =
   {"destroy", 1, export_destroy, 0}
 };
 
-ERL_NIF_INIT(Elixir.Membrane.Element.Lame.EncoderNative, nif_funcs, load, NULL, NULL, NULL)
+ERL_NIF_INIT(Elixir.Membrane.Element.Lame.Encoder.Native, nif_funcs, load, NULL, NULL, NULL)

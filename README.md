@@ -6,4 +6,4 @@ For now, only encoding audio with 2 channels, s32le format and 41000 sample rate
 
 ## Compilation on Unix systems
 
-To compile NIF you have to copy 'ext/lame.pc` to the repository visible by pkg-config (i.e. `/usr/lib/pkgconfig`)
+To compile NIF you have to copy `ext/lame.pc` to the repository visible by pkg-config (i.e. `/usr/lib/pkgconfig`)

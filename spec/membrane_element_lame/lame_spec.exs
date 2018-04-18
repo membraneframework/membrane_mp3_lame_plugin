@@ -1,7 +1,7 @@
 defmodule Membrane.Element.Lame.EncoderSpec do
   use ESpec, async: false
 
-  alias Membrane.Element.Lame.EncoderNative
+  alias Membrane.Element.Lame.Encoder.Native
 
   describe ".handle_prepare/1" do
     let :previous_state, do: :stopped
@@ -12,14 +12,14 @@ defmodule Membrane.Element.Lame.EncoderSpec do
 
       it "should return an ok result" do
         {{atom, _com}, _new_state} = described_module().handle_prepare(previous_state(), state())
-        expect(atom).to(eq(:ok))
+        expect(atom) |> to(eq(:ok))
       end
 
       it "should set native in the state to encoder" do
         {{:ok, _commands}, %{native: new_native}} =
           described_module().handle_prepare(previous_state(), state())
 
-        expect(new_native).to_not(be_nil())
+        expect(new_native) |> to_not(be_nil())
       end
     end
   end
@@ -33,7 +33,7 @@ defmodule Membrane.Element.Lame.EncoderSpec do
     let :bitrate, do: 41
     let :quality, do: 5
     let :context, do: %{}
-    let_ok :native, do: EncoderNative.create(channels(), bitrate(), quality())
+    let_ok :native, do: Native.create(channels(), bitrate(), quality())
 
     context "when queue is empty" do
       let :queue, do: <<>>
@@ -42,15 +42,17 @@ defmodule Membrane.Element.Lame.EncoderSpec do
         let :payload, do: <<1::integer-unit(32)-size(100)-signed-little>>
 
         it "should return an ok result" do
-          {result, _new_state} = described_module().handle_process1(:sink, buffer(), context(), state())
-          expect(result).to(eq :ok)
+          {result, _new_state} =
+            described_module().handle_process1(:sink, buffer(), context(), state())
+
+          expect(result) |> to(eq :ok)
         end
 
         it "queue should be equal to payload" do
           {_result, %{queue: new_queue}} =
             described_module().handle_process1(:sink, buffer(), context(), state())
 
-          expect(new_queue).to(eq payload())
+          expect(new_queue) |> to(eq payload())
         end
       end
 
@@ -58,15 +60,17 @@ defmodule Membrane.Element.Lame.EncoderSpec do
         let :payload, do: <<2::integer-unit(64)-size(1152)>>
 
         it "should return an ok result" do
-          {result, _new_state} = described_module().handle_process1(:sink, buffer(), context(), state())
-          expect(result).to(be_ok_result())
+          {result, _new_state} =
+            described_module().handle_process1(:sink, buffer(), context(), state())
+
+          expect(result) |> to(be_ok_result())
         end
 
         it "queue should be empty" do
           {_result, %{queue: new_queue}} =
             described_module().handle_process1(:sink, buffer(), context(), state())
 
-          expect(new_queue).to(eq <<>>)
+          expect(new_queue) |> to(eq <<>>)
         end
       end
 
@@ -75,15 +79,17 @@ defmodule Membrane.Element.Lame.EncoderSpec do
         let :payload, do: <<1::integer-unit(64)-size(1152)>> <> suffix()
 
         it "should return an ok result" do
-          {result, _new_state} = described_module().handle_process1(:sink, buffer(), context(), state())
-          expect(result).to(be_ok_result())
+          {result, _new_state} =
+            described_module().handle_process1(:sink, buffer(), context(), state())
+
+          expect(result) |> to(be_ok_result())
         end
 
         it "queue should contain sufix of input data" do
           {_result, %{queue: new_queue}} =
             described_module().handle_process1(:sink, buffer(), context(), state())
 
-          expect(new_queue).to(eq suffix())
+          expect(new_queue) |> to(eq suffix())
         end
       end
     end
@@ -95,15 +101,17 @@ defmodule Membrane.Element.Lame.EncoderSpec do
         let :payload, do: <<1::integer-unit(32)-size(100)-signed-little>>
 
         it "should return an ok result" do
-          {result, _new_state} = described_module().handle_process1(:sink, buffer(), context(), state())
-          expect(result).to(eq :ok)
+          {result, _new_state} =
+            described_module().handle_process1(:sink, buffer(), context(), state())
+
+          expect(result) |> to(eq :ok)
         end
 
         it "queue should be equal to queue concatenated with payload" do
           {_result, %{queue: new_queue}} =
             described_module().handle_process1(:sink, buffer(), context(), state())
 
-          expect(new_queue).to(eq queue() <> payload())
+          expect(new_queue) |> to(eq queue() <> payload())
         end
       end
 
@@ -111,8 +119,10 @@ defmodule Membrane.Element.Lame.EncoderSpec do
         let :payload, do: <<2::integer-unit(64)-size(1152)>>
 
         it "should return an ok result" do
-          {result, _new_state} = described_module().handle_process1(:sink, buffer(), context(), state())
-          expect(result).to(be_ok_result())
+          {result, _new_state} =
+            described_module().handle_process1(:sink, buffer(), context(), state())
+
+          expect(result) |> to(be_ok_result())
         end
 
         it "queue should contain 152 raw audio frames" do
@@ -120,7 +130,7 @@ defmodule Membrane.Element.Lame.EncoderSpec do
             described_module().handle_process1(:sink, buffer(), context(), state())
 
           <<_frame::integer-unit(64)-size(1152), rest::binary>> = queue() <> payload()
-          expect(new_queue).to(eq rest)
+          expect(new_queue) |> to(eq rest)
         end
       end
     end

@@ -6,7 +6,7 @@ defmodule Membrane.Element.Lame.Mixfile do
       app: :membrane_element_lame,
       compilers: ~w(bundlex.lib) ++ Mix.compilers(),
       version: "0.1.0",
-      elixir: "~> 1.3",
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       description: "Membrane Multimedia Framework (Lame Element)",
       maintainers: ["Membrane Team"],
@@ -38,7 +38,7 @@ defmodule Membrane.Element.Lame.Mixfile do
        git: "git@github.com:membraneframework/membrane-caps-audio-mpeg.git"},
       {:membrane_common_c, git: "git@github.com:membraneframework/membrane-common-c.git"},
       {:bundlex, git: "git@github.com:radiokit/bundlex.git"},
-      {:espec, "~> 1.5.0", only: :test}
+      {:espec, "~> 1.5", only: :test}
     ]
   end
 end

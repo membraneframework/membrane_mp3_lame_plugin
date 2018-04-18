@@ -3,10 +3,12 @@ defmodule Membrane.Element.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Element.Base.Filter
-  alias Membrane.Element.Lame.{EncoderNative, Encoder}
   alias Membrane.Caps.Audio.Raw
   alias Membrane.Caps.Audio.MPEG
   alias Membrane.Buffer
+  alias __MODULE__
+  alias __MODULE__.Native
+
   use Membrane.Mixins.Log, tags: :membrane_element_lame
 
   @samples_per_frame 1152
@@ -17,26 +19,23 @@ defmodule Membrane.Element.Lame.Encoder do
               quality: [
                 type: :atom,
                 default: :medium,
-                description: "Quality of the encoded audio. One of: :low, :medium, :high"
+                spec: :low | :medium | :high,
+                description: "Quality of the encoded audio"
               ]
 
-  def_known_source_pads %{
-    :source =>
-      {:always, :pull,
-       {
-         MPEG,
-         channels: 2, sample_rate: 44100, layer: :layer3, version: :v1
-       }}
-  }
+  def_known_source_pads source:
+                          {:always, :pull,
+                           {
+                             MPEG,
+                             channels: 2, sample_rate: 44100, layer: :layer3, version: :v1
+                           }}
 
-  def_known_sink_pads %{
-    :sink =>
-      {:always, {:pull, demand_in: :bytes},
-       {
-         Raw,
-         format: :s32le, sample_rate: 44100, channels: 2
-       }}
-  }
+  def_known_sink_pads sink:
+                        {:always, {:pull, demand_in: :bytes},
+                         {
+                           Raw,
+                           format: :s32le, sample_rate: 44100, channels: 2
+                         }}
 
   @impl true
   def handle_init(%Encoder{} = options) do
@@ -51,15 +50,18 @@ defmodule Membrane.Element.Lame.Encoder do
 
   @impl true
   def handle_prepare(:stopped, state) do
-    with {:ok, native} <-
-           EncoderNative.create(
+    with quality_val <- state.options.quality |> map_quality_to_value,
+         {:ok, native} <-
+           Native.create(
              @channels,
-             state[:options].bitrate,
-             state[:options].quality |> map_quality_to_value
+             state.options.bitrate,
+             quality_val
            ) do
       caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
     else
+      :invalid_quality = reason ->
+        {{:error, reason}, state}
       {:error, reason} ->
         {{:error, reason}, state}
     end
@@ -135,7 +137,7 @@ defmodule Membrane.Element.Lame.Encoder do
         <<partial::binary>> -> {partial, <<>>}
       end
 
-    with {:ok, encoded_frame} <- EncoderNative.encode_frame(native, raw_frame) do
+    with {:ok, encoded_frame} <- Native.encode_frame(native, raw_frame) do
       frame_size = min(byte_size(buffer), raw_frame_size)
       encoded_buffer = {:buffer, {:source, %Buffer{payload: encoded_frame}}}
 
@@ -152,8 +154,8 @@ defmodule Membrane.Element.Lame.Encoder do
         {:ok, {acc, bytes_used}}
 
       {:error, reason} ->
-        warn_error("Terminating stream because of malformed frame", reason)
-        {:error, reason}
+         warn_error("Terminating stream because of malformed frame", reason)
+         {:error, reason}
     end
   end
 
@@ -169,5 +171,5 @@ defmodule Membrane.Element.Lame.Encoder do
   defp map_quality_to_value(quality) when is_integer(quality) and quality >= 0 and quality <= 9,
     do: quality
 
-  defp map_quality_to_value(_), do: 5
+  defp map_quality_to_value(_), do: :invalid_quality
 end

@@ -126,7 +126,14 @@ defmodule Membrane.Element.Lame.Encoder do
   # init
   defp encode_buffer(native, buffer, state) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
-    encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos])
+
+    case encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos]) do
+      {:error, reason} ->
+        {{:error, reason}, state}
+
+      {:ok, _} = return_value ->
+        return_value
+    end
   end
 
   # handle single frame
@@ -168,9 +175,6 @@ defmodule Membrane.Element.Lame.Encoder do
   defp map_quality_to_value(:low), do: {:ok, 7}
   defp map_quality_to_value(:medium), do: {:ok, 5}
   defp map_quality_to_value(:high), do: {:ok, 2}
-
-  defp map_quality_to_value(quality) when is_integer(quality) and quality >= 0 and quality <= 9,
-    do: {:ok, quality}
-
+  defp map_quality_to_value(quality) when quality in 0..9, do: {:ok, quality}
   defp map_quality_to_value(_), do: {:error, :invalid_quality}
 end

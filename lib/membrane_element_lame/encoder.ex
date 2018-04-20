@@ -89,11 +89,6 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @impl true
-  def handle_caps(:sink, _, _, state) do
-    {:ok, state}
-  end
-
-  @impl true
   def handle_process1(
         :sink,
         %Buffer{payload: data},

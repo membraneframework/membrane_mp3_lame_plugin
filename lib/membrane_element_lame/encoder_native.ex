@@ -8,7 +8,7 @@ defmodule Membrane.Element.Lame.Encoder.Native do
 
   @doc false
   def load_nifs do
-    Bundlex.Loader.load_lib_nif!(:membrane_element_lame, :membrane_element_lame_encoder)
+    Bundlex.Loader.load_nif!(:membrane_element_lame, :encoder)
   end
 
   @doc """

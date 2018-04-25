@@ -1,10 +1,11 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
+  Application.put_env(:bundlex, :membrane_element_lame, __ENV__)
 
   def project do
     [
       app: :membrane_element_lame,
-      compilers: ~w(bundlex.lib) ++ Mix.compilers(),
+      compilers: ~w(bundlex) ++ Mix.compilers(),
       version: "0.1.0",
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),

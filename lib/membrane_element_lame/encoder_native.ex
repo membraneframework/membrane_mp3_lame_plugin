@@ -2,14 +2,7 @@ defmodule Membrane.Element.Lame.Encoder.Native do
   @moduledoc """
   This module is an interface to native lame encoder.
   """
-
-  require Bundlex.Loader
-  @on_load :load_nifs
-
-  @doc false
-  def load_nifs do
-    Bundlex.Loader.load_lib_nif!(:membrane_element_lame, :membrane_element_lame_encoder)
-  end
+  use Bundlex.Loader, nif: :encoder
 
   @doc """
   Creates encoder.
@@ -29,7 +22,7 @@ defmodule Membrane.Element.Lame.Encoder.Native do
           {:ok, any}
           | {:error, {:args, atom, String.t()}}
           | {:error, {:internal, atom}}
-  def create(_channel, _bitrate, _quality), do: raise("NIF fail")
+  defnif create(channel, bitrate, quality)
 
   @doc """
   Encodes buffer.
@@ -50,7 +43,7 @@ defmodule Membrane.Element.Lame.Encoder.Native do
           {:ok, bitstring}
           | {:error, {:args, atom, String.t()}}
           | {:error, {:internal, atom}}
-  def encode_frame(_encoder, _buffer), do: raise("NIF fail")
+  defnif encode_frame(encoder, buffer)
 
   @doc """
   Destroys the encoder.
@@ -69,5 +62,5 @@ defmodule Membrane.Element.Lame.Encoder.Native do
           :ok
           | {:error, {:args, atom, String.t()}}
           | {:error, {:internal, atom}}
-  def destroy(_encoder), do: raise("NIF fail")
+  defnif destroy(encoder)
 end

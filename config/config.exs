@@ -6,14 +6,13 @@ config :membrane_element_lame, :bundlex_lib,
       membrane_element_lame_encoder: [
         includes: [
           "../membrane_common_c/c_src",
-          "./deps/membrane_common_c/c_src",
+          "./deps/membrane_common_c/c_src"
         ],
         sources: [
           "../../membrane_common_c/c_src/membrane/log.c",
-          "encoder.c",
+          "encoder.c"
         ],
-        libs: [
-        ],
+        libs: [],
         pkg_configs: [
           "lame"
         ]
@@ -25,13 +24,12 @@ config :membrane_element_lame, :bundlex_lib,
       membrane_element_lame_encoder: [
         includes: [
           "../membrane_common_c/c_src",
-          "./deps/membrane_common_c/c_src",
+          "./deps/membrane_common_c/c_src"
         ],
         sources: [
-          "encoder.c",
+          "encoder.c"
         ],
-        libs: [
-        ]
+        libs: []
       ]
     ]
   ],
@@ -40,13 +38,12 @@ config :membrane_element_lame, :bundlex_lib,
       membrane_element_lame_encoder: [
         includes: [
           "../membrane_common_c/c_src",
-          "./deps/membrane_common_c/c_src",
+          "./deps/membrane_common_c/c_src"
         ],
         sources: [
-          "encoder.c",
+          "encoder.c"
         ],
-        libs: [
-        ],
+        libs: [],
         pkg_configs: [
           "lame"
         ]
@@ -58,15 +55,13 @@ config :membrane_element_lame, :bundlex_lib,
       membrane_element_lame_encoder: [
         includes: [
           "../membrane_common_c/c_src/",
-          "./deps/membrane_common_c/c_src",
+          "./deps/membrane_common_c/c_src"
         ],
         sources: [
           "../../membrane_common_c/c_src/membrane/log.c",
-          "encoder.c",
+          "encoder.c"
         ],
-        libs: [
-          "mp3lame"
-        ],
+        libs: [],
         pkg_configs: [
           "lame"
         ]

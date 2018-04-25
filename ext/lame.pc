@@ -1,0 +1,12 @@
+prefix=/usr/local/opt/lame
+exec_prefix=/usr/local
+libdir=/usr/lib/x86_64-linux-gnu
+includedir=/usr/include
+
+Name: lame
+Description: MPEG Audio Encoder
+Version: 3.99.5
+Requires:
+Conflicts:
+Libs: -L/usr/lib/x86_64-linux-gnu -lmp3lame -lm
+Cflags: -I/usr/include

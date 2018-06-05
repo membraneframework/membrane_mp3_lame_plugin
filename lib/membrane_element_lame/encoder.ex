@@ -27,14 +27,14 @@ defmodule Membrane.Element.Lame.Encoder do
                           {:always, :pull,
                            {
                              MPEG,
-                             channels: 2, sample_rate: 44100, layer: :layer3, version: :v1
+                             channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1
                            }}
 
   def_known_sink_pads sink:
                         {:always, {:pull, demand_in: :bytes},
                          {
                            Raw,
-                           format: :s32le, sample_rate: 44100, channels: 2
+                           format: :s32le, sample_rate: 44_100, channels: 2
                          }}
 
   @impl true
@@ -57,7 +57,7 @@ defmodule Membrane.Element.Lame.Encoder do
              state.options.bitrate,
              quality_val
            ) do
-      caps = %MPEG{channels: 2, sample_rate: 44100, version: :v1, layer: :layer3, bitrate: 192}
+      caps = %MPEG{channels: 2, sample_rate: 44_100, version: :v1, layer: :layer3, bitrate: 192}
       {{:ok, caps: {:source, caps}}, %{state | native: native}}
     else
       {:error, :invalid_quality} ->

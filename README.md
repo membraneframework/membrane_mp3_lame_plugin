@@ -4,6 +4,10 @@ Module containing element that encodes raw audio to MPEG-1 layer 3 format.
 
 For now, only encoding audio with 2 channels, s32le format and 41000 sample rate is supported.
 
+It is part of [Membrane Multimedia Framework](https://membraneframework.org).
+
+[Lame encoder library](http://lame.sourceforge.net) is required to use this element.
+
 ## Compilation on Unix systems
 
 To compile NIF you have to make sure `ext/lame.pc` is visible to the pkg-config.

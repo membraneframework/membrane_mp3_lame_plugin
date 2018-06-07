@@ -1,5 +1,7 @@
 # Membrane.Element.Lame
 
+[![Build Status](https://travis-ci.com/membraneframework/membrane-element-lame.svg?branch=master)](https://travis-ci.com/membraneframework/membrane-element-lame)
+
 Module containing element that encodes raw audio to MPEG-1 layer 3 format.
 
 For now, only encoding audio with 2 channels, s32le format and 41000 sample rate is supported.

@@ -9,7 +9,7 @@ defmodule Membrane.Element.Lame.Encoder do
   alias __MODULE__
   alias __MODULE__.Native
 
-  use Membrane.Mixins.Log, tags: :membrane_element_lame
+  use Membrane.Log, tags: :membrane_element_lame
 
   @samples_per_frame 1152
   @channels 2
@@ -77,6 +77,11 @@ defmodule Membrane.Element.Lame.Encoder do
 
   def handle_demand(:source, size, :buffers, _, state) do
     {{:ok, demand: {:sink, size * 5000}}, state}
+  end
+
+  @impl true
+  def handle_caps(:sink, _caps, _ctx, state) do
+    {:ok, state}
   end
 
   @impl true

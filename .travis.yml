@@ -4,7 +4,9 @@ elixir:
 otp_release:
   - 21.0
 sudo: false
-script: mix espec
+script: 
+  - mix espec
+  - mix test
 before_install:
   - sudo apt-get install -qq libmp3lame-dev
   - export PKG_CONFIG_PATH=$(pwd)/ext

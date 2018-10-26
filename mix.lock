@@ -13,6 +13,8 @@
   "membrane_caps_audio_raw": {:git, "https://github.com/membraneframework/membrane-caps-audio-raw.git", "14ad9ca2ff06a46c4738d135569f5beb3775efe5", []},
   "membrane_common_c": {:hex, :membrane_common_c, "0.1.0", "1ca2ca66b9244a8f08efa2d43ca56d149c91e63b198f386857ec1b25c91119ec", [:mix], [{:bundlex, "~> 0.1", [hex: :bundlex, repo: "hexpm", optional: false]}], "hexpm"},
   "membrane_core": {:git, "https://github.com/membraneframework/membrane-core.git", "6da99699d8b8de070ec92c3cded2e38cc24d90d3", []},
+  "membrane_element_file": {:git, "https://github.com/membraneframework/membrane-element-file.git", "c11e1122ec328072fcd7d29e3d8029e4c9aa2832", [branch: "feature/release_v0.2"]},
+  "mockery": {:hex, :mockery, "2.3.0", "f1af3976916e7402427116f491e3038a251857de8f0836952c2fa24ad6de4317", [:mix], [], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.4.0", "ee261bb53214943679422be70f1658fff573c5d0b0a1ecd0f18738944f818efe", [:mix], [], "hexpm"},
   "porcelain": {:hex, :porcelain, "2.0.3", "2d77b17d1f21fed875b8c5ecba72a01533db2013bd2e5e62c6d286c029150fdc", [:mix], [], "hexpm"},
   "qex": {:hex, :qex, "0.5.0", "5a3a9becf67d4006377c4c247ffdaaa8ae5b3634a0caadb788dc24d6125068f4", [:mix], [], "hexpm"},

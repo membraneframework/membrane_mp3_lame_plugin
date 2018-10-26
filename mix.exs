@@ -1,8 +1,7 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
-  Application.put_env(:bundlex, :membrane_element_lame, __ENV__)
 
-  @version "0.1.1"
+  @version "0.1.2"
   @github_url "https://github.com/membraneframework/membrane-element-lame"
 
   def project do
@@ -11,6 +10,7 @@ defmodule Membrane.Element.Lame.Mixfile do
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
       version: @version,
       elixir: "~> 1.7",
+      elixirc_paths: elixirc_paths(Mix.env()),
       description: "Membrane Multimedia Framework (Lame Element)",
       package: package(),
       name: "Membrane Element: Lame",
@@ -27,6 +27,9 @@ defmodule Membrane.Element.Lame.Mixfile do
       mod: {Membrane.Element.Lame, []}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp docs do
     [
@@ -67,7 +70,11 @@ defmodule Membrane.Element.Lame.Mixfile do
       {:bundlex, "~> 0.1", github: "membraneframework/bundlex", override: true},
       {:bunch, "~> 0.1", github: "membraneframework/bunch", override: true},
       {:unifex, github: "membraneframework/unifex"},
-      {:espec, "~> 1.6", only: :test}
+      {:espec, "~> 1.6", only: :test},
+      {:membrane_element_file,
+       github: "membraneframework/membrane-element-file",
+       branch: "feature/release_v0.2",
+       only: :test}
     ]
   end
 end

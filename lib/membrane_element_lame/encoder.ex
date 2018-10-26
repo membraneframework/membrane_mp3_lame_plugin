@@ -141,7 +141,7 @@ defmodule Membrane.Element.Lame.Encoder do
         <<partial::binary>> -> {partial, <<>>}
       end
 
-    with {:ok, encoded_frame} <- Native.encode_frame(native, raw_frame) do
+    with {:ok, encoded_frame} <- Native.encode_frame(raw_frame, native) do
       frame_size = min(byte_size(buffer), raw_frame_size)
       encoded_buffer = {:buffer, {:output, %Buffer{payload: encoded_frame}}}
 
@@ -154,7 +154,7 @@ defmodule Membrane.Element.Lame.Encoder do
         is_eos
       )
     else
-      {:error, :buflen} ->
+      {:error, :framelen} ->
         {:ok, {acc, bytes_used}}
 
       {:error, reason} ->

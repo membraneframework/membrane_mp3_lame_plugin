@@ -8,7 +8,7 @@ defmodule Membrane.Element.Lame.Mixfile do
   def project do
     [
       app: :membrane_element_lame,
-      compilers: [:bundlex] ++ Mix.compilers(),
+      compilers: [:unifex, :bundlex] ++ Mix.compilers(),
       version: @version,
       elixir: "~> 1.7",
       description: "Membrane Multimedia Framework (Lame Element)",
@@ -64,7 +64,9 @@ defmodule Membrane.Element.Lame.Mixfile do
       {:membrane_caps_audio_raw, "~> 0.1.1", github: "membraneframework/membrane-caps-audio-raw"},
       {:membrane_caps_audio_mpeg, "~> 0.1.0"},
       {:membrane_common_c, "~> 0.1"},
-      {:bundlex, "~> 0.1"},
+      {:bundlex, "~> 0.1", github: "membraneframework/bundlex", override: true},
+      {:bunch, "~> 0.1", github: "membraneframework/bunch", override: true},
+      {:unifex, github: "membraneframework/unifex"},
       {:espec, "~> 1.6", only: :test}
     ]
   end

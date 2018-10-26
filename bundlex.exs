@@ -10,8 +10,8 @@ defmodule Membrane.Element.Lame.BundlexProject do
   def nifs(_platform) do
     [
       encoder: [
-        sources: ["encoder.c"],
-        deps: [membrane_common_c: :membrane],
+        sources: ["encoder.c", "_generated/encoder.c"],
+        deps: [membrane_common_c: :membrane, unifex: :unifex],
         pkg_configs: ["lame"]
       ]
     ]

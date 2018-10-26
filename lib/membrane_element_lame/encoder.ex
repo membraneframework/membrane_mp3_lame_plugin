@@ -3,11 +3,10 @@ defmodule Membrane.Element.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Element.Base.Filter
-  alias Membrane.Caps.Audio.Raw
-  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.Caps.Audio.{MPEG, Raw}
   alias Membrane.Buffer
-  alias __MODULE__
   alias __MODULE__.Native
+  alias Membrane.Event.EndOfStream
 
   use Membrane.Log, tags: :membrane_element_lame
 
@@ -15,41 +14,40 @@ defmodule Membrane.Element.Lame.Encoder do
   @channels 2
   @sample_size 4
 
-  def_options bitrate: [type: :integer, default: 192, description: "Bitrate in kbit/sec"],
+  def_options bitrate: [
+                type: :integer,
+                default: 192,
+                description: "Output bitrate of encoded stream in kbit/sec."
+              ],
               quality: [
                 type: :atom,
                 default: :medium,
                 spec: :low | :medium | :high,
-                description: "Quality of the encoded audio"
+                description: "Quality of the encoded audio."
               ]
 
-  def_known_source_pads source:
-                          {:always, :pull,
-                           {
-                             MPEG,
-                             channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1
-                           }}
+  def_output_pads output: [
+                    caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+                  ]
 
-  def_known_sink_pads sink:
-                        {:always, {:pull, demand_in: :bytes},
-                         {
-                           Raw,
-                           format: :s32le, sample_rate: 44_100, channels: 2
-                         }}
+  def_input_pads input: [
+                   demand_unit: :bytes,
+                   caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
+                 ]
 
   @impl true
-  def handle_init(%Encoder{} = options) do
+  def handle_init(options) do
     {:ok,
      %{
        native: nil,
        queue: <<>>,
        options: options,
-       eos: false
+       raw_frame_size: MPEG.samples_per_frame(:v1, :layer3) * @sample_size * @channels
      }}
   end
 
   @impl true
-  def handle_prepare(:stopped, state) do
+  def handle_stopped_to_prepared(_ctx, state) do
     with {:ok, quality_val} <- state.options.quality |> map_quality_to_value,
          {:ok, native} <-
            Native.create(
@@ -58,7 +56,7 @@ defmodule Membrane.Element.Lame.Encoder do
              quality_val
            ) do
       caps = %MPEG{channels: 2, sample_rate: 44_100, version: :v1, layer: :layer3, bitrate: 192}
-      {{:ok, caps: {:source, caps}}, %{state | native: native}}
+      {{:ok, caps: {:output, caps}}, %{state | native: native}}
     else
       {:error, :invalid_quality} ->
         {{:error, :invalid_quality}, state}
@@ -68,55 +66,53 @@ defmodule Membrane.Element.Lame.Encoder do
     end
   end
 
-  def handle_prepare(_, state), do: {:ok, state}
-
   @impl true
-  def handle_demand(:source, size, :bytes, _, state) do
-    {{:ok, demand: {:sink, size}}, state}
+  def handle_demand(:output, size, :bytes, _ctx, state) do
+    {{:ok, demand: {:input, size}}, state}
   end
 
-  def handle_demand(:source, size, :buffers, _, state) do
-    {{:ok, demand: {:sink, size * 5000}}, state}
+  def handle_demand(:output, bufs, :buffers, _ctx, %{raw_frame_size: size} = state) do
+    {{:ok, demand: {:input, size * bufs}}, state}
   end
 
   @impl true
-  def handle_caps(:sink, _caps, _ctx, state) do
+  def handle_caps(:input, _caps, _ctx, state) do
     {:ok, state}
   end
 
   @impl true
-  def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
-    super(:sink, evt, params, %{state | eos: true})
+  def handle_event(:input, %EndOfStream{}, _ctx, %{queue: ""} = state) do
+    {{:ok, notify: {:end_of_stream, :input}, event: %EndOfStream{}}, state}
   end
 
-  def handle_event(pad, evt, params, state) do
-    super(pad, evt, params, state)
+  def handle_event(:input, %EndOfStream{}, _ctx, %{native: native, queue: queue} = state) do
+    with {:ok, {encoded_audio, bytes_used}} when bytes_used == byte_size(queue) <-
+           encode_buffer(native, queue, true) do
+      buffers = Enum.reverse(encoded_audio)
+
+      {{:ok, buffers}, %{state | queue: ""}}
+    else
+      {:ok, {_bufs, _bytes_used}} -> {{:error, :invalid_last_frame}, state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
   end
 
   @impl true
-  def handle_process1(
-        :sink,
+  def handle_process(
+        :input,
         %Buffer{payload: data},
-        _,
-        %{native: native, queue: queue, eos: eos} = state
+        %Ctx.Process{pads: pads},
+        %{native: native, queue: queue} = state
       ) do
     to_encode = queue <> data
 
     with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0 <-
-           encode_buffer(native, to_encode, state) do
+           encode_buffer(native, to_encode, pads.input[:end_of_stream?]) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
 
       buffers = Enum.reverse(encoded_audio)
 
-      event =
-        if byte_size(rest) == 0 && eos do
-          debug("EOS send")
-          [event: {:source, Membrane.Event.eos()}]
-        else
-          []
-        end
-
-      {{:ok, buffers ++ event}, %{state | queue: rest}}
+      {{:ok, buffers}, %{state | queue: rest}}
     else
       {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
@@ -124,12 +120,12 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   # init
-  defp encode_buffer(native, buffer, state) do
+  defp encode_buffer(native, buffer, is_eos) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
 
-    case encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos]) do
+    case encode_buffer(native, buffer, [], 0, raw_frame_size, is_eos) do
       {:error, reason} ->
-        {{:error, reason}, state}
+        {:error, reason}
 
       {:ok, _} = return_value ->
         return_value
@@ -147,7 +143,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
     with {:ok, encoded_frame} <- Native.encode_frame(native, raw_frame) do
       frame_size = min(byte_size(buffer), raw_frame_size)
-      encoded_buffer = {:buffer, {:source, %Buffer{payload: encoded_frame}}}
+      encoded_buffer = {:buffer, {:output, %Buffer{payload: encoded_frame}}}
 
       encode_buffer(
         native,

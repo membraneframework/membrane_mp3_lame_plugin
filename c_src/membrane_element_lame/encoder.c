@@ -7,8 +7,8 @@ void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   UNIFEX_UNUSED(env);
   MEMBRANE_DEBUG(env, "Destroying Lame encoder state %p", state);
 
-  if (state->gfp != NULL) {
-    lame_close(state->gfp);
+  if (state->lame_state != NULL) {
+    lame_close(state->lame_state);
   }
   if (state->mp3buffer != NULL) {
     unifex_free(state->mp3buffer);
@@ -18,7 +18,7 @@ void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
 UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
-  state->gfp = NULL;
+  state->lame_state = NULL;
   state->mp3buffer = NULL;
 
   if (sizeof(int) != 4) {
@@ -26,22 +26,21 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
     goto create_exit;
   }
 
-  state->gfp = lame_init();
-  lame_global_flags *gfp = state->gfp;
+  state->lame_state = lame_init();
+  lame_global_flags *lame_state = state->lame_state;
 
-  lame_set_num_channels(gfp, channels);
-  lame_set_in_samplerate(gfp, 44100);
-  lame_set_brate(gfp, bitrate);
-  lame_set_quality(gfp, quality); /* 2=high  5 = medium  7=low */
+  lame_set_num_channels(lame_state, channels);
+  lame_set_in_samplerate(lame_state, 44100);
+  lame_set_brate(lame_state, bitrate);
+  lame_set_quality(lame_state, quality); /* 2=high  5 = medium  7=low */
 
-  if (lame_init_params(gfp) < 0) {
+  if (lame_init_params(lame_state) < 0) {
     result = create_result_error(env, "lame_init");
     goto create_exit;
   }
 
   // Magic numbers below taken from the worst case estimation in 'lame.h'
   state->max_mp3buffer_size = 5 * SAMPLES_PER_FRAME / 4 + 7200;
-  state->gfp = gfp;
   state->mp3buffer = unifex_alloc(state->max_mp3buffer_size);
   state->channels = channels;
 
@@ -64,7 +63,7 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
   }
 
   // Encode the buffer
-  int result = lame_encode_buffer_int(state->gfp, left_samples, right_samples,
+  int result = lame_encode_buffer_int(state->lame_state, left_samples, right_samples,
                                       num_of_samples, state->mp3buffer,
                                       state->max_mp3buffer_size);
 
@@ -105,10 +104,10 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
 UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
   int output_size;
   if (is_gapless) {
-    output_size = lame_encode_flush_nogap(state->gfp, state->mp3buffer,
+    output_size = lame_encode_flush_nogap(state->lame_state, state->mp3buffer,
                                           state->max_mp3buffer_size);
   } else {
-    output_size = lame_encode_flush(state->gfp, state->mp3buffer,
+    output_size = lame_encode_flush(state->lame_state, state->mp3buffer,
                                     state->max_mp3buffer_size);
   }
   UnifexPayload *output_payload =

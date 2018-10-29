@@ -7,8 +7,8 @@
 #include <membrane/membrane.h>
 #include <string.h>
 
-typedef struct _EncoderHandle {
-  lame_global_flags *gfp;
+typedef struct _EncoderState {
+  lame_global_flags *lame_state;
   unsigned char *mp3buffer;
   int channels;
   int max_mp3buffer_size;

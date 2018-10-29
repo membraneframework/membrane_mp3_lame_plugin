@@ -101,8 +101,9 @@ defmodule Membrane.Element.Lame.Encoder do
   def handle_event(:input, %EndOfStream{}, _ctx, state) do
     %{native: native, queue: queue, options: options} = state
 
-    with {:ok, actions} <- encode_last_frame(native, queue, options.gapless_flush) do
-      {{:ok, actions ++ [event: {:output, %EndOfStream{}}]}, %{state | queue: ""}}
+    with {:ok, buffers} <- encode_last_frame(native, queue, options.gapless_flush) do
+      actions = [event: {:output, %EndOfStream{}}, notify: {:end_of_stream, :input}]
+      {{:ok, buffers ++ actions}, %{state | queue: ""}}
     else
       {:error, reason} ->
         {{:error, reason}, state}
@@ -114,21 +115,13 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @impl true
-  def handle_process(
-        :input,
-        %Buffer{payload: data},
-        _ctx,
-        %{native: native, queue: queue} = state
-      ) do
+  def handle_process(:input, %Buffer{payload: data}, _ctx, state) do
+    %{native: native, queue: queue} = state
     to_encode = queue <> data
 
-    with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0 <-
-           encode_buffer(native, to_encode) do
+    with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
-
-      buffers = Enum.reverse(encoded_audio)
-
-      {{:ok, buffers}, %{state | queue: rest}}
+      {{:ok, buffer: {:output, encoded_bufs}}, %{state | queue: rest}}
     else
       {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
@@ -139,13 +132,7 @@ defmodule Membrane.Element.Lame.Encoder do
   defp encode_buffer(native, buffer) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
 
-    case encode_buffer(native, buffer, [], 0, raw_frame_size) do
-      {:error, reason} ->
-        {:error, reason}
-
-      {:ok, _} = return_value ->
-        return_value
-    end
+    encode_buffer(native, buffer, [], 0, raw_frame_size)
   end
 
   # handle single frame
@@ -154,7 +141,7 @@ defmodule Membrane.Element.Lame.Encoder do
     <<raw_frame::binary-size(raw_frame_size), rest::binary>> = buffer
 
     with {:ok, encoded_frame} <- Native.encode_frame(raw_frame, native) do
-      encoded_buffer = {:buffer, {:output, %Buffer{payload: encoded_frame}}}
+      encoded_buffer = %Buffer{payload: encoded_frame}
 
       encode_buffer(
         native,
@@ -172,7 +159,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
   # Not enough samples for a frame
   defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
-    {:ok, {acc, bytes_used}}
+    {:ok, {acc |> Enum.reverse(), bytes_used}}
   end
 
   defp encode_last_frame(native, queue, gapless?) do

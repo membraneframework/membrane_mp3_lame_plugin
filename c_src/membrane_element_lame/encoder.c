@@ -1,7 +1,9 @@
 #include "encoder.h"
 
-const int SAMPLE_SIZE = 4;
-const int SAMPLES_PER_FRAME = 1152;
+static const int SAMPLE_SIZE = 4;
+static const int SAMPLES_PER_FRAME = 1152;
+// Magic numbers below taken from the worst case estimation in 'lame.h'
+static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
 
 void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   UNIFEX_UNUSED(env);
@@ -39,9 +41,7 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
     goto create_exit;
   }
 
-  // Magic numbers below taken from the worst case estimation in 'lame.h'
-  state->max_mp3buffer_size = 5 * SAMPLES_PER_FRAME / 4 + 7200;
-  state->mp3buffer = unifex_alloc(state->max_mp3buffer_size);
+  state->mp3buffer = unifex_alloc(MAX_MP3_BUFFER_SIZE);
   state->channels = channels;
 
   result = create_result_ok(env, state);
@@ -63,9 +63,9 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
   }
 
   // Encode the buffer
-  int result = lame_encode_buffer_int(state->lame_state, left_samples, right_samples,
-                                      num_of_samples, state->mp3buffer,
-                                      state->max_mp3buffer_size);
+  int result = lame_encode_buffer_int(state->lame_state, left_samples,
+                                      right_samples, num_of_samples,
+                                      state->mp3buffer, MAX_MP3_BUFFER_SIZE);
 
   unifex_free(left_samples);
   unifex_free(right_samples);
@@ -105,10 +105,10 @@ UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
   int output_size;
   if (is_gapless) {
     output_size = lame_encode_flush_nogap(state->lame_state, state->mp3buffer,
-                                          state->max_mp3buffer_size);
+                                          MAX_MP3_BUFFER_SIZE);
   } else {
     output_size = lame_encode_flush(state->lame_state, state->mp3buffer,
-                                    state->max_mp3buffer_size);
+                                    MAX_MP3_BUFFER_SIZE);
   }
   UnifexPayload *output_payload =
       unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size);

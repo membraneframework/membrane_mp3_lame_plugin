@@ -11,7 +11,6 @@ typedef struct _EncoderState {
   lame_global_flags *lame_state;
   unsigned char *mp3buffer;
   int channels;
-  int max_mp3buffer_size;
 } UnifexNifState;
 
 typedef UnifexNifState State;

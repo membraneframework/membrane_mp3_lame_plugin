@@ -102,9 +102,15 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
   return res_term;
 }
 
-UNIFEX_TERM flush(UnifexEnv *env, State *state) {
-  int output_size = lame_encode_flush(state->gfp, state->mp3buffer,
-                                      state->max_mp3buffer_size);
+UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
+  int output_size;
+  if (is_gapless) {
+    output_size = lame_encode_flush_nogap(state->gfp, state->mp3buffer,
+                                          state->max_mp3buffer_size);
+  } else {
+    output_size = lame_encode_flush(state->gfp, state->mp3buffer,
+                                    state->max_mp3buffer_size);
+  }
   UnifexPayload *output_payload =
       unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size);
   memcpy(output_payload->data, state->mp3buffer, output_size);

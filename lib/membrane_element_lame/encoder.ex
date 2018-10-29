@@ -14,7 +14,16 @@ defmodule Membrane.Element.Lame.Encoder do
   @channels 2
   @sample_size 4
 
-  def_options bitrate: [
+  def_options gapless_flush: [
+                type: :boolean,
+                default: true,
+                description: """
+                When this option is set to true, encoder will be flushed without
+                outputting any tags and allowing to play such file gaplessly
+                if concatenated with another.
+                """
+              ],
+              bitrate: [
                 type: :integer,
                 default: 192,
                 description: "Output bitrate of encoded stream in kbit/sec."
@@ -85,8 +94,10 @@ defmodule Membrane.Element.Lame.Encoder do
     {{:ok, notify: {:end_of_stream, :input}, event: %EndOfStream{}}, state}
   end
 
-  def handle_event(:input, %EndOfStream{}, _ctx, %{native: native, queue: queue} = state) do
-    with {:ok, actions} <- encode_last_frame(native, queue) do
+  def handle_event(:input, %EndOfStream{}, _ctx, state) do
+    %{native: native, queue: queue, options: options} = state
+
+    with {:ok, actions} <- encode_last_frame(native, queue, options.gapless_flush) do
       {{:ok, actions ++ [event: {:output, %EndOfStream{}}]}, %{state | queue: ""}}
     else
       {:error, reason} ->
@@ -160,9 +171,10 @@ defmodule Membrane.Element.Lame.Encoder do
     {:ok, {acc, bytes_used}}
   end
 
-  defp encode_last_frame(native, queue) do
+  defp encode_last_frame(native, queue, gapless?) do
     with {:ok, encoded_frame} <- Native.encode_frame(queue, native),
-         {:ok, flushed_frame} <- Native.flush(native) do
+         gapless_int = if(gapless?, do: 1, else: 0),
+         {:ok, flushed_frame} <- Native.flush(gapless_int, native) do
       bufs =
         [encoded_frame, flushed_frame]
         |> Enum.flat_map(fn

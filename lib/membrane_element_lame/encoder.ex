@@ -164,8 +164,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
   defp encode_last_frame(native, queue, gapless?) do
     with {:ok, encoded_frame} <- Native.encode_frame(queue, native),
-         gapless_int = if(gapless?, do: 1, else: 0),
-         {:ok, flushed_frame} <- Native.flush(gapless_int, native) do
+         {:ok, flushed_frame} <- Native.flush(gapless?, native) do
       bufs =
         [encoded_frame, flushed_frame]
         |> Enum.flat_map(fn

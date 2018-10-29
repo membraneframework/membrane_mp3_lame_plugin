@@ -6,5 +6,5 @@ spec create(channels :: int, bitrate :: int, quality :: int) ::
 spec encode_frame(buffer :: payload, state) ::
        {:ok :: label, frame :: payload} | {:error :: label, reason :: atom}
 
-spec flush(is_gapless :: int, state) ::
+spec flush(is_gapless :: bool, state) ::
        {:ok :: label, frame :: payload} | {:error :: label, reason :: atom}

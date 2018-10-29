@@ -19,5 +19,5 @@
   "porcelain": {:hex, :porcelain, "2.0.3", "2d77b17d1f21fed875b8c5ecba72a01533db2013bd2e5e62c6d286c029150fdc", [:mix], [], "hexpm"},
   "qex": {:hex, :qex, "0.5.0", "5a3a9becf67d4006377c4c247ffdaaa8ae5b3634a0caadb788dc24d6125068f4", [:mix], [], "hexpm"},
   "shmex": {:git, "https://github.com/membraneframework/shmex.git", "379d4a91b4641922240d2ae1beb202f05671fc23", []},
-  "unifex": {:git, "https://github.com/membraneframework/unifex.git", "3e59fef18f0ff3a785beea3a0466180c3e2694a4", []},
+  "unifex": {:git, "https://github.com/membraneframework/unifex.git", "8469cede71f683ed450a1a70d37e28fd0dfd24a9", []},
 }

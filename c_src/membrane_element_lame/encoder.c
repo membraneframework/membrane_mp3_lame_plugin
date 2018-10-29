@@ -12,8 +12,8 @@ void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   if (state->lame_state != NULL) {
     lame_close(state->lame_state);
   }
-  if (state->mp3buffer != NULL) {
-    unifex_free(state->mp3buffer);
+  if (state->mp3_buffer != NULL) {
+    unifex_free(state->mp3_buffer);
   }
 }
 
@@ -21,7 +21,7 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
   state->lame_state = NULL;
-  state->mp3buffer = NULL;
+  state->mp3_buffer = NULL;
 
   if (sizeof(int) != 4) {
     result = create_result_error(env, "invalid_int_size");
@@ -41,7 +41,7 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
     goto create_exit;
   }
 
-  state->mp3buffer = unifex_alloc(MAX_MP3_BUFFER_SIZE);
+  state->mp3_buffer = unifex_alloc(MAX_MP3_BUFFER_SIZE);
   state->channels = channels;
 
   result = create_result_ok(env, state);
@@ -65,7 +65,7 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
   // Encode the buffer
   int result = lame_encode_buffer_int(state->lame_state, left_samples,
                                       right_samples, num_of_samples,
-                                      state->mp3buffer, MAX_MP3_BUFFER_SIZE);
+                                      state->mp3_buffer, MAX_MP3_BUFFER_SIZE);
 
   unifex_free(left_samples);
   unifex_free(right_samples);
@@ -94,7 +94,7 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
 
   UnifexPayload *output_payload =
       unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, result);
-  memcpy(output_payload->data, state->mp3buffer, result);
+  memcpy(output_payload->data, state->mp3_buffer, result);
 
   UNIFEX_TERM res_term = encode_frame_result_ok(env, output_payload);
   unifex_payload_release(output_payload);
@@ -104,15 +104,15 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
 UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
   int output_size;
   if (is_gapless) {
-    output_size = lame_encode_flush_nogap(state->lame_state, state->mp3buffer,
+    output_size = lame_encode_flush_nogap(state->lame_state, state->mp3_buffer,
                                           MAX_MP3_BUFFER_SIZE);
   } else {
-    output_size = lame_encode_flush(state->lame_state, state->mp3buffer,
+    output_size = lame_encode_flush(state->lame_state, state->mp3_buffer,
                                     MAX_MP3_BUFFER_SIZE);
   }
   UnifexPayload *output_payload =
       unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size);
-  memcpy(output_payload->data, state->mp3buffer, output_size);
+  memcpy(output_payload->data, state->mp3_buffer, output_size);
 
   UNIFEX_TERM res_term = flush_result_ok(env, output_payload);
   unifex_payload_release(output_payload);

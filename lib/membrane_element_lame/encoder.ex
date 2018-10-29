@@ -20,19 +20,23 @@ defmodule Membrane.Element.Lame.Encoder do
                 description: """
                 When this option is set to true, encoder will be flushed without
                 outputting any tags and allowing to play such file gaplessly
-                if concatenated with another.
+                if concatenated with another file.
                 """
               ],
               bitrate: [
                 type: :integer,
                 default: 192,
-                description: "Output bitrate of encoded stream in kbit/sec."
+                description: """
+                Output bitrate of encoded stream in kbit/sec.
+                """
               ],
               quality: [
                 type: :atom,
                 default: :medium,
                 spec: :low | :medium | :high,
-                description: "Quality of the encoded audio."
+                description: """
+                Quality of the encoded audio.
+                """
               ]
 
   def_output_pads output: [

@@ -1,12 +1,11 @@
 #include "encoder.h"
 
-ErlNifResourceType *RES_ENCODER_HANDLE_TYPE;
 const int SAMPLE_SIZE = 4;
 const int SAMPLES_PER_FRAME = 1152;
 
 void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   UNIFEX_UNUSED(env);
-  MEMBRANE_DEBUG(env, "Destroying EncoderHandle %p", state);
+  MEMBRANE_DEBUG(env, "Destroying Lame encoder state %p", state);
 
   if (state->gfp != NULL) {
     lame_close(state->gfp);
@@ -40,6 +39,7 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
     goto create_exit;
   }
 
+  // Magic numbers below taken from the worst case estimation in 'lame.h'
   state->max_mp3buffer_size = 5 * SAMPLES_PER_FRAME / 4 + 7200;
   state->gfp = gfp;
   state->mp3buffer = unifex_alloc(state->max_mp3buffer_size);

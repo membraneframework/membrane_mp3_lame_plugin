@@ -1,17 +1,20 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
-  Application.put_env(:bundlex, :membrane_element_lame, __ENV__)
+
+  @version "0.1.2"
+  @github_url "https://github.com/membraneframework/membrane-element-lame"
 
   def project do
     [
       app: :membrane_element_lame,
-      compilers: ~w(bundlex) ++ Mix.compilers(),
-      version: "0.1.0",
-      elixir: "~> 1.6",
+      compilers: [:unifex, :bundlex] ++ Mix.compilers(),
+      version: @version,
+      elixir: "~> 1.7",
+      elixirc_paths: elixirc_paths(Mix.env()),
       description: "Membrane Multimedia Framework (Lame Element)",
       package: package(),
       name: "Membrane Element: Lame",
-      source_url: link(),
+      source_url: @github_url,
       docs: docs(),
       preferred_cli_env: [espec: :test, format: :test],
       deps: deps()
@@ -25,14 +28,14 @@ defmodule Membrane.Element.Lame.Mixfile do
     ]
   end
 
-  defp link do
-    "https://github.com/membraneframework/membrane-element-lame"
-  end
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_env), do: ["lib"]
 
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md"],
+      source_ref: "v#{@version}"
     ]
   end
 
@@ -51,7 +54,7 @@ defmodule Membrane.Element.Lame.Mixfile do
         "bundlex.exs"
       ],
       links: %{
-        "GitHub" => link(),
+        "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"
       }
     ]
@@ -59,13 +62,19 @@ defmodule Membrane.Element.Lame.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.18", only: :dev, runtime: false},
-      {:membrane_core, git: "git@github.com:membraneframework/membrane-core.git", override: true},
-      {:membrane_caps_audio_raw, "~> 0.1"},
-      {:membrane_caps_audio_mpeg, "~> 0.1"},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:membrane_core, github: "membraneframework/membrane-core", override: true},
+      {:membrane_caps_audio_raw, "~> 0.1.1", github: "membraneframework/membrane-caps-audio-raw"},
+      {:membrane_caps_audio_mpeg, "~> 0.1.0"},
       {:membrane_common_c, "~> 0.1"},
-      {:bundlex, "~> 0.1"},
-      {:espec, "~> 1.5", only: :test}
+      {:bundlex, "~> 0.1", github: "membraneframework/bundlex", override: true},
+      {:bunch, "~> 0.1", github: "membraneframework/bunch", override: true},
+      {:unifex, github: "membraneframework/unifex"},
+      {:espec, "~> 1.6", only: :test},
+      {:membrane_element_file,
+       github: "membraneframework/membrane-element-file",
+       branch: "feature/release_v0.2",
+       only: :test}
     ]
   end
 end

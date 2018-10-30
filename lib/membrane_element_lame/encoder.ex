@@ -3,11 +3,10 @@ defmodule Membrane.Element.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Element.Base.Filter
-  alias Membrane.Caps.Audio.Raw
-  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.Caps.Audio.{MPEG, Raw}
   alias Membrane.Buffer
-  alias __MODULE__
   alias __MODULE__.Native
+  alias Membrane.Event.EndOfStream
 
   use Membrane.Log, tags: :membrane_element_lame
 
@@ -15,41 +14,53 @@ defmodule Membrane.Element.Lame.Encoder do
   @channels 2
   @sample_size 4
 
-  def_options bitrate: [type: :integer, default: 192, description: "Bitrate in kbit/sec"],
+  def_options gapless_flush: [
+                type: :boolean,
+                default: true,
+                description: """
+                When this option is set to true, encoder will be flushed without
+                outputting any tags and allowing to play such file gaplessly
+                if concatenated with another file.
+                """
+              ],
+              bitrate: [
+                type: :integer,
+                default: 192,
+                description: """
+                Output bitrate of encoded stream in kbit/sec.
+                """
+              ],
               quality: [
                 type: :atom,
                 default: :medium,
                 spec: :low | :medium | :high,
-                description: "Quality of the encoded audio"
+                description: """
+                Quality of the encoded audio.
+                """
               ]
 
-  def_known_source_pads source:
-                          {:always, :pull,
-                           {
-                             MPEG,
-                             channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1
-                           }}
+  def_output_pads output: [
+                    caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+                  ]
 
-  def_known_sink_pads sink:
-                        {:always, {:pull, demand_in: :bytes},
-                         {
-                           Raw,
-                           format: :s32le, sample_rate: 44_100, channels: 2
-                         }}
+  def_input_pads input: [
+                   demand_unit: :bytes,
+                   caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
+                 ]
 
   @impl true
-  def handle_init(%Encoder{} = options) do
+  def handle_init(options) do
     {:ok,
      %{
        native: nil,
        queue: <<>>,
        options: options,
-       eos: false
+       raw_frame_size: MPEG.samples_per_frame(:v1, :layer3) * @sample_size * @channels
      }}
   end
 
   @impl true
-  def handle_prepare(:stopped, state) do
+  def handle_stopped_to_prepared(_ctx, state) do
     with {:ok, quality_val} <- state.options.quality |> map_quality_to_value,
          {:ok, native} <-
            Native.create(
@@ -58,7 +69,7 @@ defmodule Membrane.Element.Lame.Encoder do
              quality_val
            ) do
       caps = %MPEG{channels: 2, sample_rate: 44_100, version: :v1, layer: :layer3, bitrate: 192}
-      {{:ok, caps: {:source, caps}}, %{state | native: native}}
+      {{:ok, caps: {:output, caps}}, %{state | native: native}}
     else
       {:error, :invalid_quality} ->
         {{:error, :invalid_quality}, state}
@@ -68,55 +79,49 @@ defmodule Membrane.Element.Lame.Encoder do
     end
   end
 
-  def handle_prepare(_, state), do: {:ok, state}
-
   @impl true
-  def handle_demand(:source, size, :bytes, _, state) do
-    {{:ok, demand: {:sink, size}}, state}
+  def handle_demand(:output, size, :bytes, _ctx, state) do
+    {{:ok, demand: {:input, size}}, state}
   end
 
-  def handle_demand(:source, size, :buffers, _, state) do
-    {{:ok, demand: {:sink, size * 5000}}, state}
+  def handle_demand(:output, bufs, :buffers, _ctx, %{raw_frame_size: size} = state) do
+    {{:ok, demand: {:input, size * bufs}}, state}
   end
 
   @impl true
-  def handle_caps(:sink, _caps, _ctx, state) do
+  def handle_caps(:input, _caps, _ctx, state) do
     {:ok, state}
   end
 
   @impl true
-  def handle_event(:sink, %Membrane.Event{type: :eos} = evt, params, state) do
-    super(:sink, evt, params, %{state | eos: true})
+  def handle_event(:input, %EndOfStream{}, _ctx, %{queue: ""} = state) do
+    {{:ok, notify: {:end_of_stream, :input}, event: %EndOfStream{}}, state}
   end
 
-  def handle_event(pad, evt, params, state) do
-    super(pad, evt, params, state)
+  def handle_event(:input, %EndOfStream{}, _ctx, state) do
+    %{native: native, queue: queue, options: options} = state
+
+    with {:ok, buffers} <- encode_last_frame(native, queue, options.gapless_flush) do
+      actions = [event: {:output, %EndOfStream{}}, notify: {:end_of_stream, :input}]
+      {{:ok, buffers ++ actions}, %{state | queue: ""}}
+    else
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  def handle_event(pad, event, ctx, state) do
+    super(pad, event, ctx, state)
   end
 
   @impl true
-  def handle_process1(
-        :sink,
-        %Buffer{payload: data},
-        _,
-        %{native: native, queue: queue, eos: eos} = state
-      ) do
+  def handle_process(:input, %Buffer{payload: data}, _ctx, state) do
+    %{native: native, queue: queue} = state
     to_encode = queue <> data
 
-    with {:ok, {encoded_audio, bytes_used}} when bytes_used > 0 <-
-           encode_buffer(native, to_encode, state) do
+    with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
-
-      buffers = Enum.reverse(encoded_audio)
-
-      event =
-        if byte_size(rest) == 0 && eos do
-          debug("EOS send")
-          [event: {:source, Membrane.Event.eos()}]
-        else
-          []
-        end
-
-      {{:ok, buffers ++ event}, %{state | queue: rest}}
+      {{:ok, buffer: {:output, encoded_bufs}}, %{state | queue: rest}}
     else
       {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
@@ -124,43 +129,28 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   # init
-  defp encode_buffer(native, buffer, state) do
+  defp encode_buffer(native, buffer) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
 
-    case encode_buffer(native, buffer, [], 0, raw_frame_size, state[:eos]) do
-      {:error, reason} ->
-        {{:error, reason}, state}
-
-      {:ok, _} = return_value ->
-        return_value
-    end
+    encode_buffer(native, buffer, [], 0, raw_frame_size)
   end
 
   # handle single frame
-  defp encode_buffer(native, buffer, acc, bytes_used, raw_frame_size, is_eos)
-       when byte_size(buffer) >= raw_frame_size or is_eos do
-    {raw_frame, rest} =
-      case buffer do
-        <<used::binary-size(raw_frame_size), rest::binary>> -> {used, rest}
-        <<partial::binary>> -> {partial, <<>>}
-      end
+  defp encode_buffer(native, buffer, acc, bytes_used, raw_frame_size)
+       when byte_size(buffer) >= raw_frame_size do
+    <<raw_frame::binary-size(raw_frame_size), rest::binary>> = buffer
 
-    with {:ok, encoded_frame} <- Native.encode_frame(native, raw_frame) do
-      frame_size = min(byte_size(buffer), raw_frame_size)
-      encoded_buffer = {:buffer, {:source, %Buffer{payload: encoded_frame}}}
+    with {:ok, encoded_frame} <- Native.encode_frame(raw_frame, native) do
+      encoded_buffer = %Buffer{payload: encoded_frame}
 
       encode_buffer(
         native,
         rest,
         [encoded_buffer | acc],
-        bytes_used + frame_size,
-        raw_frame_size,
-        is_eos
+        bytes_used + raw_frame_size,
+        raw_frame_size
       )
     else
-      {:error, :buflen} ->
-        {:ok, {acc, bytes_used}}
-
       {:error, reason} ->
         warn_error("Terminating stream because of malformed frame", reason)
         {:error, reason}
@@ -168,8 +158,26 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   # Not enough samples for a frame
-  defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size, false) do
-    {:ok, {acc, bytes_used}}
+  defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
+    {:ok, {acc |> Enum.reverse(), bytes_used}}
+  end
+
+  defp encode_last_frame(native, queue, gapless?) do
+    with {:ok, encoded_frame} <- Native.encode_frame(queue, native),
+         {:ok, flushed_frame} <- Native.flush(gapless?, native) do
+      bufs =
+        [encoded_frame, flushed_frame]
+        |> Enum.flat_map(fn
+          "" -> []
+          frame -> [%Buffer{payload: frame}]
+        end)
+
+      {:ok, buffer: {:output, bufs}}
+    else
+      {:error, reason} ->
+        warn_error("Terminating stream because of malformed last frame", reason)
+        {:error, reason}
+    end
   end
 
   defp map_quality_to_value(:low), do: {:ok, 7}

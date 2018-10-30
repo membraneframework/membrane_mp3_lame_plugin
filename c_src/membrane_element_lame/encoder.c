@@ -1,249 +1,120 @@
-/**
- * Membrane Element: Lame Encoder - Erlang native interface to native
- * lame encoder.
- *
- * All Rights Reserved, (c) 2016 Filip Abramowicz
- */
-
 #include "encoder.h"
-#include <string.h>
 
+static const int SAMPLE_SIZE = 4;
+static const int SAMPLES_PER_FRAME = 1152;
+// Magic numbers below taken from the worst case estimation in 'lame.h'
+static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
 
-#define MP3_BUFFER_TOO_SMALL        -1
-#define MALLOC_PROBLEM              -2
-#define LAME_INIT_PARAMS_NOT_CALLED -3
-#define PSYCHO_ACOUSTIC_PROBLEMS    -4
-#define UNUSED(x) (void)(x)
+void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
+  UNIFEX_UNUSED(env);
+  MEMBRANE_DEBUG(env, "Destroying Lame encoder state %p", state);
 
-ErlNifResourceType *RES_ENCODER_HANDLE_TYPE;
-const int SAMPLE_SIZE = 4;
-const int SAMPLES_PER_FRAME = 1152;
-
-
-void res_encoder_handle_destructor(ErlNifEnv *env, void *value) {
-  UNUSED(env);
-  EncoderHandle *handle = (EncoderHandle *) value;
-  MEMBRANE_DEBUG(env, "Destroying EncoderHandle %p", handle);
-
-  if (handle->mp3buffer != NULL)
-  {
-    free(handle->mp3buffer);
+  if (state->lame_state != NULL) {
+    lame_close(state->lame_state);
   }
-
-  enif_release_resource(handle);
+  if (state->mp3_buffer != NULL) {
+    unifex_free(state->mp3_buffer);
+  }
 }
 
+UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
+  UNIFEX_TERM result;
+  State *state = unifex_alloc_state(env);
+  state->lame_state = NULL;
+  state->mp3_buffer = NULL;
 
-int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info) {
-  UNUSED(priv_data);
-  UNUSED(load_info);
-  int flags = ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER;
-  RES_ENCODER_HANDLE_TYPE =
-    enif_open_resource_type(env, NULL, "EncoderHandle", res_encoder_handle_destructor, flags, NULL);
-  return 0;
+  if (sizeof(int) != 4) {
+    result = create_result_error(env, "invalid_int_size");
+    goto create_exit;
+  }
+
+  state->lame_state = lame_init();
+  lame_global_flags *lame_state = state->lame_state;
+
+  lame_set_num_channels(lame_state, channels);
+  lame_set_in_samplerate(lame_state, 44100);
+  lame_set_brate(lame_state, bitrate);
+  lame_set_quality(lame_state, quality); /* 2=high  5 = medium  7=low */
+
+  if (lame_init_params(lame_state) < 0) {
+    result = create_result_error(env, "lame_init");
+    goto create_exit;
+  }
+
+  state->mp3_buffer = unifex_alloc(MAX_MP3_BUFFER_SIZE);
+  state->channels = channels;
+
+  result = create_result_ok(env, state);
+create_exit:
+  unifex_release_state(env, state);
+  return result;
 }
 
+UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
+  int num_of_samples = buffer->size / (state->channels * SAMPLE_SIZE);
 
-/**
- *
- * Creates encoder.
- *
- * It accepts one argument:
- *
- * - format - atom representing raw sample format,
- *
- * On success, returns `{:ok, resource}`.
- *
- * On bad arguments passed, returns `{:error, {:args, field, description}}`.
- *
- * On aggregator initialization error, returns `{:error, {:internal, reason}}`.
- */
-static ERL_NIF_TERM export_create(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-  UNUSED(argc);
-  UNUSED(argv);
-  EncoderHandle *handle;
-  int bitrate = 0;
-  int channels = 0;
-  int quality = 0;
-  lame_global_flags *gfp;
-
-  if(!enif_get_int(env, argv[0], &channels)) {
-    return membrane_util_make_error_args(env, "args", "Invalid number of channels");
-  }
-  if(!enif_get_int(env, argv[1], &bitrate)) {
-    return membrane_util_make_error_args(env, "args", "Invalid bitrate value");
-  }
-  if(!enif_get_int(env, argv[2], &quality)) {
-    return membrane_util_make_error_args(env, "args", "Invalid quality");
-  }
-  if(sizeof(int) != 4) {
-    return membrane_util_make_error(env, enif_make_string(env, "invalid int size", ERL_NIF_LATIN1));
-  }
-
-
-  // TODO - argument validation
-
-  gfp = lame_init();
-
-  lame_set_num_channels(gfp, channels);
-  lame_set_in_samplerate(gfp, 44100);
-  lame_set_brate(gfp, bitrate);
-  lame_set_quality(gfp, quality);   /* 2=high  5 = medium  7=low */
-
-  int error = lame_init_params(gfp);
-  if (error)
-  {
-    return membrane_util_make_error_internal(env, "failedtoinitializelame");
-  }
-
-  // Initialize handle
-  handle = enif_alloc_resource(RES_ENCODER_HANDLE_TYPE, sizeof(EncoderHandle));
-
-  MEMBRANE_DEBUG(env, "Initialized EncoderHandle %p", handle);
-
-
-  handle->max_mp3buffer_size = 1.25 * SAMPLES_PER_FRAME + 7200;
-  handle->gfp = gfp;
-  handle->mp3buffer = malloc(handle->max_mp3buffer_size);
-  handle->channels = channels;
-
-  // Prepare return term
-  ERL_NIF_TERM encoder_term = enif_make_resource(env, handle);
-  enif_release_resource(handle);
-
-  return membrane_util_make_ok_tuple(env, encoder_term);
-}
-
-
-/**
- * Encodes buffer.
- *
- * It accepts two arguments:
- *
- * - resource - aggregator resource,
- * - data - buffer to encode
- *
- * On success, returns `{:ok, data}` where data always contain one sample in
- * the same format and channels as given to `create/3`.
- *
- * On bad arguments passed, returns `{:error, {:args, field, description}}`.
- *
- * On internal error, returns `{:error, {:internal, reason}}`.
- */
-static ERL_NIF_TERM export_encode_frame(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-  UNUSED(argc);
-  EncoderHandle*        handle;
-  ErlNifBinary          buffer;
-
-  // Get resource arg
-  if(!enif_get_resource(env, argv[0], RES_ENCODER_HANDLE_TYPE, (void **) &handle)) {
-    return membrane_util_make_error_args(env, "data", "Given encoder is not valid resource");
-  }
-
-  // Get data arg
-  if(!enif_inspect_binary(env, argv[1], &buffer)) {
-    return membrane_util_make_error_args(env, "data", "Given data for left channel is not valid binary");
-  }
-
-  int num_of_samples = buffer.size / (handle->channels * SAMPLE_SIZE);
-  if (num_of_samples < SAMPLES_PER_FRAME){
-    return membrane_util_make_error(env, enif_make_atom(env ,"buflen"));
-  }
-
-  int *samples = (int*) buffer.data;
-  int *left_samples = malloc(num_of_samples * SAMPLE_SIZE);
-  int *right_samples = malloc(num_of_samples * SAMPLE_SIZE);
-
+  int *samples = (int *)buffer->data;
+  int *left_samples = unifex_alloc(num_of_samples * SAMPLE_SIZE);
+  int *right_samples = unifex_alloc(num_of_samples * SAMPLE_SIZE);
 
   for (int i = 0; i < num_of_samples; i++) {
-    left_samples[i] = samples[i*2];
-    right_samples[i] = samples[i*2+1];
+    left_samples[i] = samples[i * 2];
+    right_samples[i] = samples[i * 2 + 1];
   }
 
   // Encode the buffer
-  int result = lame_encode_buffer_int(handle->gfp,
-                                  left_samples,
-                                  right_samples,
-                                  num_of_samples,
-                                  handle->mp3buffer,
-                                  handle->max_mp3buffer_size);
+  int result = lame_encode_buffer_int(state->lame_state, left_samples,
+                                      right_samples, num_of_samples,
+                                      state->mp3_buffer, MAX_MP3_BUFFER_SIZE);
 
-  free(left_samples);
-  free(right_samples);
+  unifex_free(left_samples);
+  unifex_free(right_samples);
 
-  switch (result)
-  {
-    case MP3_BUFFER_TOO_SMALL:
-      return membrane_util_make_error_args(env, "encoder", "MP3 buffer was too small");
-      break;
+  switch (result) {
+  case MP3_BUFFER_TOO_SMALL:
+    return encode_frame_result_error(env, "buflen");
+    break;
 
-    case MALLOC_PROBLEM:
-      return membrane_util_make_error_args(env, "encoder", "There was malloc problem in lame");
-      break;
+  case MALLOC_PROBLEM:
+    return encode_frame_result_error(env, "malloc");
+    break;
 
-    case LAME_INIT_PARAMS_NOT_CALLED:
-      return membrane_util_make_error_args(env, "encoder", "Lame_init_params not called");
-      break;
+  case LAME_INIT_PARAMS_NOT_CALLED:
+    return encode_frame_result_error(env, "lame_no_init");
+    break;
 
-    case PSYCHO_ACOUSTIC_PROBLEMS:
-      return membrane_util_make_error_args(env, "encoder", "Psycho acoustic problems in lame");
-      break;
+  case PSYCHO_ACOUSTIC_PROBLEMS:
+    return encode_frame_result_error(env, "lame_acoustic");
+    break;
 
-    default:
-      // No error - result contains number of bytes in output buffer.
-      break;
+  default:
+    // No error - result contains number of bytes in output buffer.
+    break;
   }
 
-  ERL_NIF_TERM encoded_frame;
+  UnifexPayload *output_payload =
+      unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, result);
+  memcpy(output_payload->data, state->mp3_buffer, result);
 
-  // Move encoded data to fit buffer
-  unsigned char* outputbuffer = enif_make_new_binary(env, result, &encoded_frame);
-  memcpy(outputbuffer, handle->mp3buffer, result);
-
-  return membrane_util_make_ok_tuple(env, encoded_frame);
+  UNIFEX_TERM res_term = encode_frame_result_ok(env, output_payload);
+  unifex_payload_release(output_payload);
+  return res_term;
 }
 
-
-/**
- * Destroys the encoder.
- *
- * It accepts one argument:
- *
- * - resource - aggregator resource.
- *
- * On success, returns `:ok`.
- *
- * On bad arguments passed, returns `{:error, {:args, field, description}}`.
- */
-static ERL_NIF_TERM export_destroy(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-  UNUSED(argc);
-  EncoderHandle* handle;
-
-  // Get resource arg
-  if(!enif_get_resource(env, argv[0], RES_ENCODER_HANDLE_TYPE, (void **) &handle)) {
-    return membrane_util_make_error_args(env, "encoder", "Given encoder is not valid resource");
+UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
+  int output_size;
+  if (is_gapless) {
+    output_size = lame_encode_flush_nogap(state->lame_state, state->mp3_buffer,
+                                          MAX_MP3_BUFFER_SIZE);
+  } else {
+    output_size = lame_encode_flush(state->lame_state, state->mp3_buffer,
+                                    MAX_MP3_BUFFER_SIZE);
   }
+  UnifexPayload *output_payload =
+      unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size);
+  memcpy(output_payload->data, state->mp3_buffer, output_size);
 
-  lame_close(handle->gfp);
-
-  if (handle->mp3buffer != NULL)
-  {
-    free(handle->mp3buffer);
-  }
-
-  // Return value
-  return membrane_util_make_ok(env);
+  UNIFEX_TERM res_term = flush_result_ok(env, output_payload);
+  unifex_payload_release(output_payload);
+  return res_term;
 }
-
-
-static ErlNifFunc nif_funcs[] =
-{
-  {"create", 3, export_create, 0},
-  {"encode_frame", 2, export_encode_frame, 0},
-  {"destroy", 1, export_destroy, 0}
-};
-
-ERL_NIF_INIT(Elixir.Membrane.Element.Lame.Encoder.Native.Nif, nif_funcs, load, NULL, NULL, NULL)

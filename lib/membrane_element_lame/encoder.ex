@@ -95,7 +95,7 @@ defmodule Membrane.Element.Lame.Encoder do
 
   @impl true
   def handle_event(:input, %EndOfStream{}, _ctx, %{queue: ""} = state) do
-    {{:ok, notify: {:end_of_stream, :input}, event: %EndOfStream{}}, state}
+    {{:ok, notify: {:end_of_stream, :input}, event: {:output, %EndOfStream{}}}, state}
   end
 
   def handle_event(:input, %EndOfStream{}, _ctx, state) do

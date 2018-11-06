@@ -1,7 +1,7 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.2.0"
   @github_url "https://github.com/membraneframework/membrane-element-lame"
 
   def project do
@@ -63,18 +63,15 @@ defmodule Membrane.Element.Lame.Mixfile do
   defp deps do
     [
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:membrane_core, github: "membraneframework/membrane-core", override: true},
-      {:membrane_caps_audio_raw, "~> 0.1.1", github: "membraneframework/membrane-caps-audio-raw"},
+      {:membrane_core, "~> 0.2.0"},
+      {:membrane_caps_audio_raw, "~> 0.1.3"},
       {:membrane_caps_audio_mpeg, "~> 0.1.0"},
-      {:membrane_common_c, "~> 0.1"},
-      {:bundlex, "~> 0.1", github: "membraneframework/bundlex", override: true},
-      {:bunch, "~> 0.1", github: "membraneframework/bunch", override: true},
-      {:unifex, github: "membraneframework/unifex"},
+      {:membrane_common_c, "~> 0.2.0"},
+      {:bundlex, "~> 0.1.3"},
+      {:bunch, "~> 0.1.2"},
+      {:unifex, "~> 0.1.0"},
       {:espec, "~> 1.6", only: :test},
-      {:membrane_element_file,
-       github: "membraneframework/membrane-element-file",
-       branch: "feature/release_v0.2",
-       only: :test}
+      {:membrane_element_file, "~> 0.2.0", only: :test}
     ]
   end
 end

@@ -1,7 +1,7 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.2.1"
+  @version "0.2.2"
   @github_url "https://github.com/membraneframework/membrane-element-lame"
 
   def project do
@@ -67,9 +67,9 @@ defmodule Membrane.Element.Lame.Mixfile do
       {:membrane_caps_audio_raw, "~> 0.1"},
       {:membrane_caps_audio_mpeg, "~> 0.2"},
       {:membrane_common_c, "~> 0.2.0"},
-      {:bundlex, "~> 0.1.3"},
-      {:bunch, "~> 0.1.2"},
-      {:unifex, "~> 0.1.0"},
+      {:bundlex, "~> 0.1.6"},
+      {:bunch, "~> 0.1"},
+      {:unifex, "~> 0.2.0"},
       {:espec, "~> 1.6", only: :test},
       {:membrane_element_file, "~> 0.2.0", only: :test}
     ]

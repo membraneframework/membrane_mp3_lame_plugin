@@ -4,7 +4,7 @@
 
 Module containing element that encodes raw audio to MPEG-1 layer 3 format.
 
-For now, only encoding audio with 2 channels, s32le format and 41000 sample rate is supported.
+For now, only encoding audio with 2 channels, s32le format and 44100 sample rate is supported.
 
 It is part of [Membrane Multimedia Framework](https://membraneframework.org).
 
@@ -13,7 +13,7 @@ It is part of [Membrane Multimedia Framework](https://membraneframework.org).
 Add the following line to your `deps` in `mix.exs`. Run `mix deps.get`.
 
 ```elixir
-{:membrane_element_lame, "~> 0.2.0"}
+{:membrane_element_lame, "~> 0.3"}
 ```
 
 [Lame encoder library](http://lame.sourceforge.net) is required to use this element.

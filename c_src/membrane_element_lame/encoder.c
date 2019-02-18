@@ -34,7 +34,7 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality) {
   lame_set_num_channels(lame_state, channels);
   lame_set_in_samplerate(lame_state, 44100);
   lame_set_brate(lame_state, bitrate);
-  lame_set_quality(lame_state, quality); /* 2=high  5 = medium  7=low */
+  lame_set_quality(lame_state, quality);
 
   if (lame_init_params(lame_state) < 0) {
     result = create_result_error(env, "lame_init");

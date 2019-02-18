@@ -31,11 +31,17 @@ defmodule Membrane.Element.Lame.Encoder do
                 """
               ],
               quality: [
-                type: :atom,
-                default: :medium,
-                spec: :low | :medium | :high,
+                type: :number,
+                default: 5,
+                spec: non_neg_integer,
                 description: """
-                Quality of the encoded audio.
+                Value of this parameter affects quality by selecting one of the algorithms
+                for encoding: `0` being best (and very slow) and `9` being worst.
+
+                Recommended values:
+                  * `2` - near-best quality, not too slow
+                  * `5` - good quality, fast
+                  * `7` - ok quality, really fast
                 """
               ]
 
@@ -180,9 +186,6 @@ defmodule Membrane.Element.Lame.Encoder do
     end
   end
 
-  defp map_quality_to_value(:low), do: {:ok, 7}
-  defp map_quality_to_value(:medium), do: {:ok, 5}
-  defp map_quality_to_value(:high), do: {:ok, 2}
   defp map_quality_to_value(quality) when quality in 0..9, do: {:ok, quality}
   defp map_quality_to_value(_), do: {:error, :invalid_quality}
 end

@@ -7,7 +7,6 @@ static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
 
 void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   UNIFEX_UNUSED(env);
-  MEMBRANE_DEBUG(env, "Destroying Lame encoder state %p", state);
 
   if (state->lame_state != NULL) {
     lame_close(state->lame_state);

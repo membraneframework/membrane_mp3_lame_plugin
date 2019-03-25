@@ -14,6 +14,13 @@ defmodule Membrane.Element.Lame.Encoder do
   @channels 2
   @sample_size 4
 
+  def_output_pad :output,
+    caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+
+  def_input_pad :input,
+    demand_unit: :bytes,
+    caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
+
   def_options gapless_flush: [
                 type: :boolean,
                 default: true,
@@ -44,15 +51,6 @@ defmodule Membrane.Element.Lame.Encoder do
                   * `7` - ok quality, really fast
                 """
               ]
-
-  def_output_pads output: [
-                    caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
-                  ]
-
-  def_input_pads input: [
-                   demand_unit: :bytes,
-                   caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
-                 ]
 
   @impl true
   def handle_init(options) do

@@ -1,6 +1,7 @@
 # Membrane.Element.Lame
 
-[![Build Status](https://travis-ci.com/membraneframework/membrane-element-lame.svg?branch=master)](https://travis-ci.com/membraneframework/membrane-element-lame)
+[![CircleCI](https://circleci.com/gh/membraneframework/membrane-element-lame.svg?style=svg)](https://circleci.com/gh/membraneframework/membrane-element-lame)
+
 
 Module containing element that encodes raw audio to MPEG-1 layer 3 format.
 

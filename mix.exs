@@ -64,10 +64,7 @@ defmodule Membrane.Element.Lame.Mixfile do
     [
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:membrane_core,
-       github: "membraneframework/membrane-core",
-       branch: "new-testing-api",
-       only: [:test, :dev],
-       override: true},
+       github: "membraneframework/membrane-core", branch: "master", override: true},
       {:membrane_caps_audio_raw, "~> 0.1.0"},
       {:membrane_caps_audio_mpeg, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.2.0"},

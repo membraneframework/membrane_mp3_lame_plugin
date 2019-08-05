@@ -2,7 +2,7 @@ defmodule Membrane.Element.Lame.Encoder do
   @moduledoc """
   Element encoding raw audio into MPEG-1, layer 3 format
   """
-  use Membrane.Element.Base.Filter
+  use Membrane.Filter
   alias Membrane.Caps.Audio.{MPEG, Raw}
   alias Membrane.Buffer
   alias __MODULE__.Native

@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - checkout
-      - run: update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
+      - run: update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
       - run: apt-get install -qq libmp3lame-dev
       - run: mix deps.get
       - run: mix format --check-formatted

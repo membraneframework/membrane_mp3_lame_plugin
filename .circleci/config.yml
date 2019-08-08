@@ -14,4 +14,5 @@ jobs:
       - run: apt-get install -qq libmp3lame-dev
       - run: mix deps.get
       - run: mix format --check-formatted
+      - run: mix espec
       - run: mix test

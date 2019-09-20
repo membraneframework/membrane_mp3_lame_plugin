@@ -87,6 +87,8 @@ defmodule Membrane.Element.Lame.EncoderSpec do
 
     let :context,
       do: %Ctx.Process{
+        clock: nil,
+        pipeline_clock: nil,
         playback_state: :playing,
         pads: %{:input => [end_of_stream?: false], :output => []}
       }

@@ -1,7 +1,7 @@
 defmodule Membrane.Element.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.3.3"
+  @version "0.3.4"
   @github_url "https://github.com/membraneframework/membrane-element-lame"
 
   def project do
@@ -63,8 +63,7 @@ defmodule Membrane.Element.Lame.Mixfile do
   defp deps do
     [
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:membrane_core,
-       github: "membraneframework/membrane-core", branch: "master", override: true},
+      {:membrane_core, "~> 0.4.0"},
       {:membrane_caps_audio_raw, "~> 0.1.0"},
       {:membrane_caps_audio_mpeg, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.2.0"},

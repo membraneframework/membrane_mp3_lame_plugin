@@ -6,7 +6,6 @@ defmodule Membrane.Element.Lame.Encoder do
   alias Membrane.Caps.Audio.{MPEG, Raw}
   alias Membrane.Buffer
   alias __MODULE__.Native
-  alias Membrane.Event.EndOfStream
 
   use Membrane.Log, tags: :membrane_element_lame
 
@@ -98,24 +97,20 @@ defmodule Membrane.Element.Lame.Encoder do
   end
 
   @impl true
-  def handle_event(:input, %EndOfStream{}, _ctx, %{queue: ""} = state) do
-    {{:ok, notify: {:end_of_stream, :input}, event: {:output, %EndOfStream{}}}, state}
+  def handle_end_of_stream(:input, __ctx, %{queue: ""} = state) do
+    {{:ok, notify: {:end_of_stream, :input}, end_of_stream: :output}, state}
   end
 
-  def handle_event(:input, %EndOfStream{}, _ctx, state) do
+  def handle_end_of_stream(:input, _ctx, state) do
     %{native: native, queue: queue, options: options} = state
 
     with {:ok, buffers} <- encode_last_frame(native, queue, options.gapless_flush) do
-      actions = [event: {:output, %EndOfStream{}}, notify: {:end_of_stream, :input}]
+      actions = [end_of_stream: :output, notify: {:end_of_stream, :input}]
       {{:ok, buffers ++ actions}, %{state | queue: ""}}
     else
       {:error, reason} ->
         {{:error, reason}, state}
     end
-  end
-
-  def handle_event(pad, event, ctx, state) do
-    super(pad, event, ctx, state)
   end
 
   @impl true

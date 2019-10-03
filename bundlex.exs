@@ -12,7 +12,7 @@ defmodule Membrane.Element.Lame.BundlexProject do
       encoder: [
         sources: ["encoder.c", "_generated/encoder.c"],
         deps: [membrane_common_c: :membrane, unifex: :unifex],
-        pkg_configs: ["lame"]
+        libs: ["mp3lame", "m"]
       ]
     ]
   end

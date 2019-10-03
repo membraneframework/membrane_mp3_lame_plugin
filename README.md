@@ -1,4 +1,4 @@
-# Membrane.Element.Lame
+# Membrane Element: Lame Encoder
 
 [![Hex.pm](https://img.shields.io/hexpm/v/membrane_element_lame.svg)](https://hex.pm/packages/membrane_element_lame)
 [![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/membrane_element_lame/)

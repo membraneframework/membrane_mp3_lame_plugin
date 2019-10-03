@@ -44,16 +44,7 @@ defmodule Membrane.Element.Lame.Mixfile do
     [
       maintainers: ["Membrane Team"],
       licenses: ["Apache 2.0"],
-      files: [
-        "c_src",
-        "lib",
-        "ext",
-        "mix.exs",
-        "README*",
-        "LICENSE*",
-        ".formatter.exs",
-        "bundlex.exs"
-      ],
+      files: ["c_src", "lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs", "bundlex.exs"],
       links: %{
         "GitHub" => @github_url,
         "Membrane Framework Homepage" => "https://membraneframework.org"

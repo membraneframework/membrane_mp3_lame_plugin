@@ -3,7 +3,12 @@
 static const int SAMPLE_SIZE = 4;
 static const int SAMPLES_PER_FRAME = 1152;
 // Magic numbers below taken from the worst case estimation in 'lame.h'
+#if (defined(__GNUC__) && __GNUC__ >= 8) ||                                    \
+    (defined(__clang__) && __clang_major__ >= 6)
 static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
+#else
+#define MAX_MP3_BUFFER_SIZE (5 * SAMPLES_PER_FRAME / 4 + 7200);
+#endif
 
 void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
   UNIFEX_UNUSED(env);

@@ -120,9 +120,9 @@ defmodule Membrane.Element.Lame.Encoder do
 
     with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
-      {{:ok, buffer: {:output, encoded_bufs}}, %{state | queue: rest}}
+      {{:ok, buffer: {:output, encoded_bufs}, redemand: :output}, %{state | queue: rest}}
     else
-      {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
+      {:ok, {[], 0}} -> {{:ok, redemand: :output}, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
     end
   end

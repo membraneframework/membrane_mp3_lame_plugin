@@ -105,9 +105,11 @@ defmodule Membrane.Element.Lame.EncoderSpec do
       context "and buffer doesn't contain a frame" do
         let :payload, do: <<1::integer-unit(32)-size(100)-signed-little>>
 
-        it "should return an ok result" do
+        it "should return an ok result without a buffer" do
           {result, _new_state} = handle_process()
-          expect(result) |> to(eq :ok)
+          expect(result) |> to(match_pattern {:ok, _})
+          {:ok, actions} = result
+          refute Keyword.has_key?(actions, :buffer)
         end
 
         it "queue should be equal to payload" do
@@ -168,9 +170,11 @@ defmodule Membrane.Element.Lame.EncoderSpec do
       context "and buffer with queue don't contain full MPEG frame" do
         let :payload, do: <<1::integer-unit(32)-size(100)-signed-little>>
 
-        it "should return an ok result" do
+        it "should return an ok result without a buffer" do
           {result, _new_state} = handle_process()
-          expect(result) |> to(eq :ok)
+          expect(result) |> to(match_pattern {:ok, _})
+          {:ok, actions} = result
+          refute Keyword.has_key?(actions, :buffer)
         end
 
         it "queue should be equal to queue concatenated with payload" do

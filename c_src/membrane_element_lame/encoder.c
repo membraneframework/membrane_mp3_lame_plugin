@@ -7,7 +7,7 @@ static const int SAMPLES_PER_FRAME = 1152;
     (defined(__clang__) && __clang_major__ >= 6)
 static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
 #else
-#define MAX_MP3_BUFFER_SIZE (5 * SAMPLES_PER_FRAME / 4 + 7200);
+#define MAX_MP3_BUFFER_SIZE (5 * SAMPLES_PER_FRAME / 4 + 7200)
 #endif
 
 void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {

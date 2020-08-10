@@ -1,30 +1,30 @@
-defmodule Membrane.Element.Lame.Mixfile do
+defmodule Membrane.MP3.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.4.0"
-  @github_url "https://github.com/membraneframework/membrane-element-lame"
+  @version "0.5.0"
+  @github_url "https://github.com/membraneframework/membrane_mp3_lame_plugin"
 
   def project do
     [
-      app: :membrane_element_lame,
-      compilers: [:unifex, :bundlex] ++ Mix.compilers(),
+      app: :membrane_mp3_lame_plugin,
       version: @version,
-      elixir: "~> 1.7",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
-      description: "Membrane Multimedia Framework (Lame Element)",
+      compilers: [:unifex, :bundlex] ++ Mix.compilers(),
+      deps: deps(),
+      description: "Membrane Multimedia Framework plugin for Lame",
       package: package(),
-      name: "Membrane Element: Lame",
+      name: "Membrane Lame Plugin",
       source_url: @github_url,
+      homepage_url: "https://membraneframework.org",
       docs: docs(),
-      preferred_cli_env: [espec: :test, format: :test],
-      deps: deps()
+      preferred_cli_env: [espec: :test, format: :test]
     ]
   end
 
   def application do
     [
-      extra_applications: [],
-      mod: {Membrane.Element.Lame, []}
+      extra_applications: []
     ]
   end
 
@@ -34,9 +34,9 @@ defmodule Membrane.Element.Lame.Mixfile do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: ["README.md", "LICENSE"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.Element.Lame]
+      nest_modules_by_prefix: [Membrane.MP3.Lame]
     ]
   end
 
@@ -54,14 +54,15 @@ defmodule Membrane.Element.Lame.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:membrane_core, "~> 0.5.0"},
+      {:membrane_core, "~> 0.5.2"},
       {:membrane_caps_audio_raw, "~> 0.2.0"},
       {:membrane_caps_audio_mpeg, "~> 0.2.0"},
       {:membrane_common_c, "~> 0.3.0"},
       {:bundlex, "~> 0.2.0"},
       {:bunch, "~> 1.0"},
       {:unifex, "~> 0.2.0"},
+
+      {:ex_doc, "~> 0.22.2", only: :dev, runtime: false},
       {:espec, "~> 1.7", only: :test},
       {:membrane_element_file, "~> 0.3.0", only: :test}
     ]

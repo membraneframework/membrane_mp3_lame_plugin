@@ -1,4 +1,4 @@
-defmodule Membrane.Element.Lame.Encoder do
+defmodule Membrane.MP3.Lame.Encoder do
   @moduledoc """
   Element encoding raw audio into MPEG-1, layer 3 format
   """

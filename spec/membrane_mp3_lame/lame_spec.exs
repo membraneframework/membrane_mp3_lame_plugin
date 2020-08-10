@@ -1,14 +1,14 @@
-defmodule Membrane.Element.Lame.EncoderSpec do
+defmodule Membrane.MP3.Lame.EncoderSpec do
   use ESpec, async: false
 
-  alias Membrane.Element.Lame.Encoder.Native
+  alias Membrane.MP3.Lame.Encoder.Native
   alias Membrane.Element.CallbackContext, as: Ctx
   @raw_frame_size 4608
 
   describe ".handle_stopped_to_prepared/2" do
     let :previous_state, do: :stopped
 
-    let :state, do: %{options: %Membrane.Element.Lame.Encoder{}, native: nil}
+    let :state, do: %{options: %Membrane.MP3.Lame.Encoder{}, native: nil}
     let :context, do: %{}
 
     it "should return an ok result" do

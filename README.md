@@ -14,7 +14,7 @@ It is part of [Membrane Multimedia Framework](https://membraneframework.org).
 Add the following line to your `deps` in `mix.exs`. Run `mix deps.get`.
 
 ```elixir
-{:membrane_mp3_lame_plugin	, "~> 0.5.0"}
+{:membrane_mp3_lame_plugin, "~> 0.5.0"}
 ```
 
 [Lame encoder library](http://lame.sourceforge.net) is required to use this element.
@@ -49,8 +49,8 @@ TODO
 
 ## Copyright and License
 
-Copyright 2020, [Software Mansion](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_lame_plugin)
+Copyright 2020, [Software Mansion](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_mp3_lame_plugin)
 
-[![Software Mansion](https://logo.swmansion.com/logo?color=white&variant=desktop&width=200&tag=membrane-github)](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_lame_plugin)
+[![Software Mansion](https://logo.swmansion.com/logo?color=white&variant=desktop&width=200&tag=membrane-github)](https://swmansion.com/?utm_source=git&utm_medium=readme&utm_campaign=membrane_mp3_lame_plugin)
 
 Licensed under the [Apache License, Version 2.0](LICENSE)

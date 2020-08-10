@@ -1,6 +1,6 @@
 # Membrane Element: Lame Encoder
 
-[![Hex.pm](https://img.shields.io/hexpm/v/membrane_mp3_lame_plugin	.svg)](https://hex.pm/package/membrane_mp3_lame_plugin)
+[![Hex.pm](https://img.shields.io/hexpm/v/membrane_mp3_lame_plugin.svg)](https://hex.pm/package/membrane_mp3_lame_plugin)
 [![CircleCI](https://circleci.com/gh/membraneframework/membrane_mp3_lame_plugin.svg?style=svg)](https://circleci.com/gh/membraneframework/membrane_mp3_lame_plugin)
 
 Module containing element that encodes raw audio to MPEG-1 layer 3 format.

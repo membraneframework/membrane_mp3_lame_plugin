@@ -3,16 +3,18 @@ defmodule Membrane.MP3.Lame.BundlexProject do
 
   def project() do
     [
-      nifs: nifs(Bundlex.platform())
+      nifs: natives()
     ]
   end
 
-  def nifs(_platform) do
+  def natives() do
     [
       encoder: [
-        sources: ["encoder.c", "_generated/encoder.c"],
-        deps: [membrane_common_c: :membrane, unifex: :unifex],
-        libs: ["mp3lame", "m"]
+        interface: :nif,
+        sources: ["encoder.c"],
+        deps: [membrane_common_c: :membrane],
+        libs: ["mp3lame", "m"],
+        preprocessor: Unifex
       ]
     ]
   end

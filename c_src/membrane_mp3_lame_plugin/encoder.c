@@ -10,7 +10,7 @@ static const int MAX_MP3_BUFFER_SIZE = 5 * SAMPLES_PER_FRAME / 4 + 7200;
 #define MAX_MP3_BUFFER_SIZE (5 * SAMPLES_PER_FRAME / 4 + 7200)
 #endif
 
-void handle_destroy_state(UnifexEnv *env, UnifexNifState *state) {
+void handle_destroy_state(UnifexEnv *env, State *state) {
   UNIFEX_UNUSED(env);
 
   if (state->lame_state != NULL) {

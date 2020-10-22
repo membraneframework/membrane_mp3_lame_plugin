@@ -1,4 +1,4 @@
-module Membrane.Element.Lame.Encoder.Native
+module Membrane.MP3.Lame.Encoder.Native
 
 spec create(channels :: int, bitrate :: int, quality :: int) ::
        {:ok :: label, state} | {:error :: label, reason :: atom}

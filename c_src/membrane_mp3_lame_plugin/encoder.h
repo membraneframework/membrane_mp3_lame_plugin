@@ -1,6 +1,6 @@
 #pragma once
 
-#define MEMBRANE_LOG_TAG "Membrane.Element.Lame.Encoder"
+#define MEMBRANE_LOG_TAG "Membrane.MP3.Lame.Encoder"
 
 #include <lame/lame.h>
 #include <membrane/log.h>

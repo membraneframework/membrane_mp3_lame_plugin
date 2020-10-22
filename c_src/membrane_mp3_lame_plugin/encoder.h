@@ -11,9 +11,7 @@ typedef struct _EncoderState {
   lame_global_flags *lame_state;
   unsigned char *mp3_buffer;
   int channels;
-} UnifexNifState;
-
-typedef UnifexNifState State;
+} State;
 
 #include "_generated/encoder.h"
 

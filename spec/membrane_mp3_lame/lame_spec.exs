@@ -90,7 +90,8 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
         clock: nil,
         parent_clock: nil,
         playback_state: :playing,
-        pads: %{:input => [end_of_stream?: false], :output => []}
+        pads: %{:input => [end_of_stream?: false], :output => []},
+        name: :encoder
       }
 
     let_ok :native, do: Native.create(channels(), bitrate(), quality())

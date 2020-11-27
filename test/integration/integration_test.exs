@@ -2,14 +2,13 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
   use ExUnit.Case
   import Membrane.Testing.Assertions
   alias Membrane.Testing.Pipeline
-  alias Membrane.Element
 
   def make_pipeline(in_path, out_path) do
     Pipeline.start_link(%Pipeline.Options{
       elements: [
-        file_src: %Element.File.Source{chunk_size: 4096, location: in_path},
+        file_src: %Membrane.File.Source{chunk_size: 4096, location: in_path},
         encoder: Membrane.MP3.Lame.Encoder,
-        sink: %Element.File.Sink{location: out_path}
+        sink: %Membrane.File.Sink{location: out_path}
       ]
     })
   end

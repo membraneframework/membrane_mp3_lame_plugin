@@ -54,15 +54,15 @@ defmodule Membrane.MP3.Lame.Mixfile do
 
   defp deps do
     [
-      {:membrane_core, "~> 0.5.2"},
-      {:membrane_caps_audio_raw, "~> 0.2.0"},
+      {:membrane_core, "~> 0.6.0"},
+      {:membrane_caps_audio_raw, "~> 0.3.0"},
       {:membrane_caps_audio_mpeg, "~> 0.2.0"},
-      {:membrane_common_c, "~> 0.4.0"},
+      {:membrane_common_c, "~> 0.5.0"},
       {:bunch, "~> 1.0"},
       {:unifex, "~> 0.3.2"},
       {:ex_doc, "~> 0.22.2", only: :dev, runtime: false},
       {:espec, "~> 1.7", only: :test},
-      {:membrane_element_file, "~> 0.3.0", only: :test}
+      {:membrane_file_plugin, "~> 0.5.0", only: :test}
     ]
   end
 end

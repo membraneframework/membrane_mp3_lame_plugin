@@ -3,7 +3,7 @@ defmodule Membrane.MP3.Lame.BundlexProject do
 
   def project() do
     [
-      nifs: natives()
+      natives: natives()
     ]
   end
 

@@ -2,7 +2,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: membrane/bionic-membrane:latest
+      - image: membraneframeworklabs/docker_membrane:latest
     environment:
       MIX_ENV: test
       PKG_CONFIG_PATH: '/root/app/ext/'
@@ -10,8 +10,8 @@ jobs:
 
     steps:
       - checkout
-      - run: update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 100
-      - run: apt-get install -qq libmp3lame-dev
+      - run: apt-get update 
+      - run: apt-get install -y libmp3lame-dev
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix espec

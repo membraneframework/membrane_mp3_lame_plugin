@@ -45,12 +45,12 @@ sudo dnf install lame-devel
 ```
 
 ## Usage 
-You can find an example in [`sample.exs`](sample.exs), where the `MP3.Lame.Encoder` element 
+You can find an example in [`example.exs`](example.exs), where the `MP3.Lame.Encoder` element 
 was used in a pipeline that redirects audio from default input to an MP3 file. 
 
 To run the example, you can use the following command:
  ```bash
-iex sample.exs
+iex example.exs
 ``` 
 
 ## Copyright and License

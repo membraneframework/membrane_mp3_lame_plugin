@@ -1,9 +1,9 @@
 Mix.install([
-  {:membrane_core, "~> 0.7.0"},
-  {:membrane_ffmpeg_swresample_plugin, "~> 0.7.1"},
-  {:membrane_file_plugin, "~> 0.6.0"},
-  {:membrane_mp3_lame_plugin, "~> 0.8.0"},
-  {:membrane_portaudio_plugin, "~> 0.7.0"}
+  :membrane_core,
+  :membrane_ffmpeg_swresample_plugin,
+  :membrane_file_plugin,
+  :membrane_mp3_lame_plugin,
+  :membrane_portaudio_plugin
 ])
 
 defmodule MP3Encoder.Pipeline do

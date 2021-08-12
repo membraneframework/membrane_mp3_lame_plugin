@@ -45,7 +45,13 @@ sudo dnf install lame-devel
 ```
 
 ## Usage 
-TODO
+You can find an example in `sample.exs`, where the plugin was used in a pipeline 
+that redirects audio from default input to an MP3 file. 
+
+To run the example, you can use the following command:
+ ```bash
+iex sample.exs
+``` 
 
 ## Copyright and License
 

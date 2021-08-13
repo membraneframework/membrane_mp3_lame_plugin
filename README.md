@@ -3,18 +3,18 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/membrane_mp3_lame_plugin.svg)](https://hex.pm/package/membrane_mp3_lame_plugin)
 [![CircleCI](https://circleci.com/gh/membraneframework/membrane_mp3_lame_plugin.svg?style=svg)](https://circleci.com/gh/membraneframework/membrane_mp3_lame_plugin)
 
-Module containing element that encodes raw audio to MPEG-1 layer 3 format.
+The module contains element that encodes raw audio to MPEG-1 layer 3 format.
 
 For now, only encoding audio with 2 channels, s32le format and 44100 sample rate is supported.
 
-It is part of [Membrane Multimedia Framework](https://membraneframework.org).
+It is a part of [Membrane Multimedia Framework](https://membraneframework.org).
 
 ## Installation
 
-Add the following line to your `deps` in `mix.exs`. Run `mix deps.get`.
+Add the following line to your `deps` in `mix.exs`. Then, run `mix deps.get`.
 
 ```elixir
-{:membrane_mp3_lame_plugin, "~> 0.5.0"}
+{:membrane_mp3_lame_plugin, "~> 0.8.0"}
 ```
 
 [Lame encoder library](http://lame.sourceforge.net) is required to use this element.
@@ -45,7 +45,13 @@ sudo dnf install lame-devel
 ```
 
 ## Usage 
-TODO
+You can find an example in [`example.exs`](example.exs), where the `MP3.Lame.Encoder` element 
+was used in a pipeline that redirects audio from default input to an MP3 file. 
+
+To run the example, you can use the following command:
+ ```bash
+iex example.exs
+``` 
 
 ## Copyright and License
 

@@ -96,12 +96,13 @@ UNIFEX_TERM encode_frame(UnifexEnv *env, UnifexPayload *buffer, State *state) {
     break;
   }
 
-  UnifexPayload *output_payload =
-      unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, result);
+  UnifexPayload *output_payload = (UnifexPayload *)unifex_alloc(sizeof(UnifexPayload));
+  unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, result, output_payload);
   memcpy(output_payload->data, state->mp3_buffer, result);
 
   UNIFEX_TERM res_term = encode_frame_result_ok(env, output_payload);
   unifex_payload_release(output_payload);
+  unifex_free(output_payload);
   return res_term;
 }
 
@@ -114,11 +115,13 @@ UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
     output_size = lame_encode_flush(state->lame_state, state->mp3_buffer,
                                     MAX_MP3_BUFFER_SIZE);
   }
-  UnifexPayload *output_payload =
-      unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size);
+  UnifexPayload *output_payload = (UnifexPayload *)unifex_alloc(sizeof(UnifexPayload));
+  unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size, output_payload);
+  
   memcpy(output_payload->data, state->mp3_buffer, output_size);
 
   UNIFEX_TERM res_term = flush_result_ok(env, output_payload);
   unifex_payload_release(output_payload);
+  unifex_free(output_payload);
   return res_term;
 }

@@ -3,7 +3,8 @@ defmodule Membrane.MP3.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Filter
-  alias Membrane.Caps.Audio.{MPEG, Raw}
+  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.RawAudio
   alias Membrane.Buffer
   alias __MODULE__.Native
 
@@ -20,7 +21,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   def_input_pad :input,
     demand_unit: :bytes,
     demand_mode: :auto,
-    caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
+    caps: {RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2}
 
   def_options gapless_flush: [
                 type: :boolean,

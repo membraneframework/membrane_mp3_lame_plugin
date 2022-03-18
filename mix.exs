@@ -61,7 +61,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
       {:bunch, "~> 1.0"},
       {:unifex, "~> 0.7.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
-      {:espec, "~> 1.7", only: :test},
+      {:espec, "~> 1.7", only: [:dev, :test]},
       {:membrane_file_plugin, "~> 0.9.0", only: :test},
       {:credo, "~> 1.6.0", runtime: false},
       {:dialyxir, ">= 0.0.0", runtime: false}

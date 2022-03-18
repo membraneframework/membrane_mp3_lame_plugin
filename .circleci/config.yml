@@ -20,7 +20,7 @@ jobs:
     docker:
       - image: membraneframeworklabs/docker_membrane:latest
         environment:
-          MIX_ENV: dev
+          MIX_ENV: test
           PKG_CONFIG_PATH: '/root/app/ext/'
 
     working_directory: ~/app

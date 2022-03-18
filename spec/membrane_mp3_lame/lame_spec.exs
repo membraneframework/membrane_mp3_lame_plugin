@@ -29,7 +29,10 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
   describe ".handle_process/4" do
     let :channels, do: 2
     let :format, do: :s16le
-    let :caps, do: %Membrane.Caps.Audio.Raw{channels: channels(), format: format()}
+
+    let :caps,
+      do: %Membrane.RawAudio{channels: channels(), sample_format: format(), sample_rate: 44_100}
+
     let :buffer, do: %Membrane.Buffer{payload: payload()}
     let :state, do: %{native: native(), queue: queue()}
     let :bitrate, do: 41

@@ -3,7 +3,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
   import Membrane.Testing.Assertions
   alias Membrane.Testing.Pipeline
 
-  def make_pipeline(in_path, out_path) do
+  defp make_pipeline(in_path, out_path) do
     Pipeline.start_link(%Pipeline.Options{
       elements: [
         file_src: %Membrane.File.Source{chunk_size: 4096, location: in_path},
@@ -13,7 +13,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     })
   end
 
-  def assert_files_equal(file_a, file_b) do
+  defp assert_files_equal(file_a, file_b) do
     assert {:ok, a} = File.read(file_a)
     assert {:ok, b} = File.read(file_b)
     assert a == b

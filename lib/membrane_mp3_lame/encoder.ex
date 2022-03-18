@@ -3,11 +3,11 @@ defmodule Membrane.MP3.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Filter
-  alias Membrane.Caps.Audio.{MPEG, Raw}
+  require Membrane.Logger
+  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.RawAudio
   alias Membrane.Buffer
   alias __MODULE__.Native
-
-  use Membrane.Log, tags: :membrane_element_lame
 
   @samples_per_frame 1152
   @channels 2
@@ -20,7 +20,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   def_input_pad :input,
     demand_unit: :bytes,
     demand_mode: :auto,
-    caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
+    caps: {RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2}
 
   def_options gapless_flush: [
                 type: :boolean,
@@ -144,7 +144,7 @@ defmodule Membrane.MP3.Lame.Encoder do
       )
     else
       {:error, reason} ->
-        warn_error("Terminating stream because of malformed frame", reason)
+        Membrane.Logger.error("Terminating stream because of malformed frame. Reason: #{reason}")
         {:error, reason}
     end
   end
@@ -167,11 +167,14 @@ defmodule Membrane.MP3.Lame.Encoder do
       {:ok, buffer: {:output, bufs}}
     else
       {:error, reason} ->
-        warn_error("Terminating stream because of malformed last frame", reason)
+        Membrane.Logger.error(
+          "Terminating stream because of malformed last frame. Reason: #{reason}"
+        )
+
         {:error, reason}
     end
   end
 
   defp map_quality_to_value(quality) when quality in 0..9, do: {:ok, quality}
-  defp map_quality_to_value(_), do: {:error, :invalid_quality}
+  defp map_quality_to_value(_otherwise), do: {:error, :invalid_quality}
 end

@@ -26,56 +26,6 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
     end
   end
 
-  describe ".handle_demand/4" do
-    let :pad, do: :output
-    let :state, do: %{raw_frame_size: @raw_frame_size}
-    let :context, do: %{}
-    let :size, do: 1242
-
-    let! :handle_demand,
-      do: described_module().handle_demand(pad(), size(), unit(), context(), state())
-
-    context "received demand in bytes" do
-      let :unit, do: :bytes
-
-      it "should return an ok result" do
-        {result, _state} = handle_demand()
-        expect(result) |> to(be_ok_result())
-      end
-
-      it "should keep state unchanged" do
-        {_result, new_state} = handle_demand()
-        expect(new_state) |> to(eq state())
-      end
-
-      it "should send demand of the same size on :input pad" do
-        {{:ok, keyword_list}, _new_state} = handle_demand()
-        demand = keyword_list |> Keyword.get(:demand)
-        expect(demand) |> to(eq {:input, size()})
-      end
-    end
-
-    context "received demand in buffers" do
-      let :unit, do: :buffers
-
-      it "should return an ok result" do
-        {result, _state} = handle_demand()
-        expect(result) |> to(be_ok_result())
-      end
-
-      it "should keep state unchanged" do
-        {_result, new_state} = handle_demand()
-        expect(new_state) |> to(eq state())
-      end
-
-      it "should send demand with multipied size by @aprox_compress_ratio" do
-        {{:ok, keyword_list}, _new_state} = handle_demand()
-        demand = keyword_list |> Keyword.get(:demand)
-        expect(demand) |> to(eq {:input, size() * @raw_frame_size})
-      end
-    end
-  end
-
   describe ".handle_process/4" do
     let :channels, do: 2
     let :format, do: :s16le
@@ -108,9 +58,7 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
 
         it "should return an ok result without a buffer" do
           {result, _new_state} = handle_process()
-          expect(result) |> to(match_pattern {:ok, _})
-          {:ok, actions} = result
-          refute Keyword.has_key?(actions, :buffer)
+          expect(result) |> to(eq :ok)
         end
 
         it "queue should be equal to payload" do
@@ -173,9 +121,7 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
 
         it "should return an ok result without a buffer" do
           {result, _new_state} = handle_process()
-          expect(result) |> to(match_pattern {:ok, _})
-          {:ok, actions} = result
-          refute Keyword.has_key?(actions, :buffer)
+          expect(result) |> to(eq :ok)
         end
 
         it "queue should be equal to queue concatenated with payload" do

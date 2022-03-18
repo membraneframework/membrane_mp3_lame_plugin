@@ -14,10 +14,12 @@ defmodule Membrane.MP3.Lame.Encoder do
   @sample_size 4
 
   def_output_pad :output,
+    demand_mode: :auto,
     caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
 
   def_input_pad :input,
     demand_unit: :bytes,
+    demand_mode: :auto,
     caps: {Raw, format: :s32le, sample_rate: 44_100, channels: 2}
 
   def_options gapless_flush: [
@@ -83,15 +85,6 @@ defmodule Membrane.MP3.Lame.Encoder do
   end
 
   @impl true
-  def handle_demand(:output, size, :bytes, _ctx, state) do
-    {{:ok, demand: {:input, size}}, state}
-  end
-
-  def handle_demand(:output, bufs, :buffers, _ctx, %{raw_frame_size: size} = state) do
-    {{:ok, demand: {:input, size * bufs}}, state}
-  end
-
-  @impl true
   def handle_caps(:input, _caps, _ctx, state) do
     {:ok, state}
   end
@@ -120,9 +113,9 @@ defmodule Membrane.MP3.Lame.Encoder do
 
     with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
-      {{:ok, buffer: {:output, encoded_bufs}, redemand: :output}, %{state | queue: rest}}
+      {{:ok, buffer: {:output, encoded_bufs}}, %{state | queue: rest}}
     else
-      {:ok, {[], 0}} -> {{:ok, redemand: :output}, %{state | queue: to_encode}}
+      {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
       {:error, reason} -> {{:error, reason}, state}
     end
   end

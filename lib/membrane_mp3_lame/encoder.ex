@@ -20,7 +20,10 @@ defmodule Membrane.MP3.Lame.Encoder do
   def_input_pad :input,
     demand_unit: :bytes,
     demand_mode: :auto,
-    caps: [{RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2}, Membrane.RemoteStream]
+    caps: [
+      {RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2},
+      Membrane.RemoteStream
+    ]
 
   def_options gapless_flush: [
                 type: :boolean,

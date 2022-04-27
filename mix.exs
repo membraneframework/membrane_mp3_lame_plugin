@@ -1,7 +1,7 @@
 defmodule Membrane.MP3.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.12.0"
+  @version "0.13.0"
   @github_url "https://github.com/membraneframework/membrane_mp3_lame_plugin"
 
   def project do
@@ -54,15 +54,15 @@ defmodule Membrane.MP3.Lame.Mixfile do
 
   defp deps do
     [
-      {:membrane_core, "~> 0.9.0"},
-      {:membrane_raw_audio_format, "~> 0.8.0"},
+      {:membrane_core, "~> 0.10.0"},
+      {:membrane_raw_audio_format, "~> 0.9.0"},
       {:membrane_caps_audio_mpeg, "~> 0.2.0"},
-      {:membrane_common_c, "~> 0.11.0"},
+      {:membrane_common_c, "~> 0.12.0"},
       {:bunch, "~> 1.0"},
       {:unifex, "~> 0.7.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:espec, "~> 1.7", only: [:dev, :test]},
-      {:membrane_file_plugin, "~> 0.9.0", only: :test},
+      {:membrane_file_plugin, "~> 0.12.0", only: :test},
       {:credo, "~> 1.6.0", runtime: false},
       {:dialyxir, ">= 0.0.0", runtime: false}
     ]

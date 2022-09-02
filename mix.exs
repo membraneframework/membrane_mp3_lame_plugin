@@ -12,6 +12,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
       deps: deps(),
+      dialyzer: dialyzer(),
       description: "Membrane MP3 encoder based on Lame",
       package: package(),
       name: "Membrane MP3 Lame Plugin",
@@ -35,6 +36,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
     [
       main: "readme",
       extras: ["README.md", "LICENSE"],
+      formatters: ["html"],
       source_ref: "v#{@version}",
       nest_modules_by_prefix: [Membrane.MP3.Lame]
     ]
@@ -50,6 +52,19 @@ defmodule Membrane.MP3.Lame.Mixfile do
         "Membrane Framework Homepage" => "https://membraneframework.org"
       }
     ]
+  end
+
+  defp dialyzer() do
+    opts = [
+      flags: [:error_handling]
+    ]
+
+    if System.get_env("CI") == "true" do
+      # Store PLTs in cacheable directory for CI
+      [plt_local_path: "priv/plts", plt_core_path: "priv/plts"] ++ opts
+    else
+      opts
+    end
   end
 
   defp deps do

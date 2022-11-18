@@ -3,11 +3,13 @@ defmodule Membrane.MP3.Lame.Encoder do
   Element encoding raw audio into MPEG-1, layer 3 format
   """
   use Membrane.Filter
+
   require Membrane.Logger
+
+  alias __MODULE__.Native
+  alias Membrane.Buffer
   alias Membrane.Caps.Audio.MPEG
   alias Membrane.RawAudio
-  alias Membrane.Buffer
-  alias __MODULE__.Native
 
   @samples_per_frame 1152
   @channels 2

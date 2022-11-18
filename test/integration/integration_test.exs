@@ -26,6 +26,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     on_exit(fn -> File.rm(out_path) end)
 
     assert {:ok, pid} = make_pipeline(in_path, out_path)
+    on_exit(fn -> Pipeline.terminate(pid, blocking?: true) end)
 
     assert_end_of_stream(pid, :sink, :input, 300)
     assert_files_equal(out_path, ref_path)

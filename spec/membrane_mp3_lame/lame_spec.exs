@@ -42,7 +42,7 @@ defmodule Membrane.MP3.Lame.EncoderSpec do
       do: %Ctx.Process{
         clock: nil,
         parent_clock: nil,
-        playback_state: :playing,
+        playback: :playing,
         pads: %{:input => [end_of_stream?: false], :output => []},
         name: :encoder
       }

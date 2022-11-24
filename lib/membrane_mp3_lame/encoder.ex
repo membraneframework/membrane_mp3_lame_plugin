@@ -17,18 +17,18 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   def_output_pad :output,
     demand_mode: :auto,
-    caps: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+    accepted_format: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
 
   def_input_pad :input,
     demand_unit: :bytes,
     demand_mode: :auto,
-    caps: [
+    accepted_format: [
       {RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2},
       Membrane.RemoteStream
     ]
 
   def_options gapless_flush: [
-                type: :boolean,
+                spec: Bool.t(),
                 default: true,
                 description: """
                 When this option is set to true, encoder will be flushed without
@@ -37,14 +37,13 @@ defmodule Membrane.MP3.Lame.Encoder do
                 """
               ],
               bitrate: [
-                type: :integer,
+                spec: Integer.t(),
                 default: 192,
                 description: """
                 Output bitrate of encoded stream in kbit/sec.
                 """
               ],
               quality: [
-                type: :number,
                 default: 5,
                 spec: non_neg_integer,
                 description: """
@@ -59,8 +58,8 @@ defmodule Membrane.MP3.Lame.Encoder do
               ]
 
   @impl true
-  def handle_init(options) do
-    {:ok,
+  def handle_init(_ctx, options) do
+    {[],
      %{
        native: nil,
        queue: <<>>,
@@ -70,45 +69,46 @@ defmodule Membrane.MP3.Lame.Encoder do
   end
 
   @impl true
-  def handle_stopped_to_prepared(_ctx, state) do
-    with {:ok, quality_val} <- state.options.quality |> map_quality_to_value,
-         {:ok, native} <-
+  def handle_setup(_ctx, state) do
+    quality_val = state.options.quality |> map_quality_to_value!
+
+    with {:ok, native} <-
            Native.create(
              @channels,
              state.options.bitrate,
              quality_val
            ) do
-      caps = %MPEG{channels: 2, sample_rate: 44_100, version: :v1, layer: :layer3, bitrate: 192}
-      {{:ok, caps: {:output, caps}}, %{state | native: native}}
-    else
-      {:error, :invalid_quality} ->
-        {{:error, :invalid_quality}, state}
+      stream_format = %MPEG{
+        channels: 2,
+        sample_rate: 44_100,
+        version: :v1,
+        layer: :layer3,
+        bitrate: 192
+      }
 
+      {[stream_format: {:output, stream_format}], %{state | native: native}}
+    else
       {:error, reason} ->
-        {{:error, reason}, state}
+        raise "Error initializing mpeg: #{inspect(reason)}"
     end
   end
 
   @impl true
-  def handle_caps(:input, _caps, _ctx, state) do
-    {:ok, state}
+  def handle_stream_format(:input, _stream_format, _ctx, state) do
+    {[], state}
   end
 
   @impl true
   def handle_end_of_stream(:input, __ctx, %{queue: ""} = state) do
-    {{:ok, notify: {:end_of_stream, :input}, end_of_stream: :output}, state}
+    {[notify_parent: {:end_of_stream, :input}, end_of_stream: :output], state}
   end
 
   def handle_end_of_stream(:input, _ctx, state) do
     %{native: native, queue: queue, options: options} = state
 
-    with {:ok, buffers} <- encode_last_frame(native, queue, options.gapless_flush) do
-      actions = [end_of_stream: :output, notify: {:end_of_stream, :input}]
-      {{:ok, buffers ++ actions}, %{state | queue: ""}}
-    else
-      {:error, reason} ->
-        {{:error, reason}, state}
-    end
+    buffers = encode_last_frame!(native, queue, options.gapless_flush)
+    actions = [end_of_stream: :output, notify: {:end_of_stream, :input}]
+    {[buffers ++ actions], %{state | queue: ""}}
   end
 
   @impl true
@@ -116,31 +116,32 @@ defmodule Membrane.MP3.Lame.Encoder do
     %{native: native, queue: queue} = state
     to_encode = queue <> data
 
-    with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
-      <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
-      {{:ok, buffer: {:output, encoded_bufs}}, %{state | queue: rest}}
+    {encoded_bufs, bytes_used} = encode_buffer!(native, to_encode)
+
+    if {[], 0} do
+      {[], %{state | queue: to_encode}}
     else
-      {:ok, {[], 0}} -> {:ok, %{state | queue: to_encode}}
-      {:error, reason} -> {{:error, reason}, state}
+      <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
+      {[buffer: {:output, encoded_bufs}], %{state | queue: rest}}
     end
   end
 
   # init
-  defp encode_buffer(native, buffer) do
+  defp encode_buffer!(native, buffer) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
 
-    encode_buffer(native, buffer, [], 0, raw_frame_size)
+    encode_buffer!(native, buffer, [], 0, raw_frame_size)
   end
 
   # handle single frame
-  defp encode_buffer(native, buffer, acc, bytes_used, raw_frame_size)
+  defp encode_buffer!(native, buffer, acc, bytes_used, raw_frame_size)
        when byte_size(buffer) >= raw_frame_size do
     <<raw_frame::binary-size(raw_frame_size), rest::binary>> = buffer
 
     with {:ok, encoded_frame} <- Native.encode_frame(raw_frame, native) do
       encoded_buffer = %Buffer{payload: encoded_frame}
 
-      encode_buffer(
+      encode_buffer!(
         native,
         rest,
         [encoded_buffer | acc],
@@ -150,16 +151,16 @@ defmodule Membrane.MP3.Lame.Encoder do
     else
       {:error, reason} ->
         Membrane.Logger.error("Terminating stream because of malformed frame. Reason: #{reason}")
-        {:error, reason}
+        raise "Error #{inspect(reason)}"
     end
   end
 
   # Not enough samples for a frame
-  defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
-    {:ok, {acc |> Enum.reverse(), bytes_used}}
+  defp encode_buffer!(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
+    {acc |> Enum.reverse(), bytes_used}
   end
 
-  defp encode_last_frame(native, queue, gapless?) do
+  defp encode_last_frame!(native, queue, gapless?) do
     with {:ok, encoded_frame} <- Native.encode_frame(queue, native),
          {:ok, flushed_frame} <- Native.flush(gapless?, native) do
       bufs =
@@ -169,17 +170,19 @@ defmodule Membrane.MP3.Lame.Encoder do
           frame -> [%Buffer{payload: frame}]
         end)
 
-      {:ok, buffer: {:output, bufs}}
+      [buffer: {:output, bufs}]
     else
       {:error, reason} ->
         Membrane.Logger.error(
           "Terminating stream because of malformed last frame. Reason: #{reason}"
         )
 
-        {:error, reason}
+        raise "Error #{inspect(reason)}"
     end
   end
 
-  defp map_quality_to_value(quality) when quality in 0..9, do: {:ok, quality}
-  defp map_quality_to_value(_otherwise), do: {:error, :invalid_quality}
+  defp map_quality_to_value!(quality) when quality in 0..9, do: quality
+
+  defp map_quality_to_value!(_otherwise),
+    do: raise("Error parsing quality argument #{inspect(:invalid_quality)}")
 end

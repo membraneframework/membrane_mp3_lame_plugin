@@ -17,18 +17,19 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   def_output_pad :output,
     demand_mode: :auto,
-    accepted_format: {MPEG, channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+    accepted_format: %MPEG{channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
 
   def_input_pad :input,
     demand_unit: :bytes,
     demand_mode: :auto,
-    accepted_format: [
-      {RawAudio, sample_format: :s32le, sample_rate: 44_100, channels: 2},
-      Membrane.RemoteStream
-    ]
+    accepted_format:
+      any_of(
+        %RawAudio{sample_format: :s32le, sample_rate: 44_100, channels: 2},
+        Membrane.RemoteStream
+      )
 
   def_options gapless_flush: [
-                spec: Bool.t(),
+                spec: boolean(),
                 default: true,
                 description: """
                 When this option is set to true, encoder will be flushed without
@@ -37,7 +38,7 @@ defmodule Membrane.MP3.Lame.Encoder do
                 """
               ],
               bitrate: [
-                spec: Integer.t(),
+                spec: integer(),
                 default: 192,
                 description: """
                 Output bitrate of encoded stream in kbit/sec.
@@ -78,19 +79,24 @@ defmodule Membrane.MP3.Lame.Encoder do
              state.options.bitrate,
              quality_val
            ) do
-      stream_format = %MPEG{
-        channels: 2,
-        sample_rate: 44_100,
-        version: :v1,
-        layer: :layer3,
-        bitrate: 192
-      }
-
-      {[stream_format: {:output, stream_format}], %{state | native: native}}
+      {[], %{state | native: native}}
     else
       {:error, reason} ->
         raise "Error initializing mpeg: #{inspect(reason)}"
     end
+  end
+
+  @impl true
+  def handle_playing(_ctx, state) do
+    stream_format = %MPEG{
+      channels: 2,
+      sample_rate: 44_100,
+      version: :v1,
+      layer: :layer3,
+      bitrate: 192
+    }
+
+    {[stream_format: {:output, stream_format}], state}
   end
 
   @impl true
@@ -107,8 +113,8 @@ defmodule Membrane.MP3.Lame.Encoder do
     %{native: native, queue: queue, options: options} = state
 
     buffers = encode_last_frame!(native, queue, options.gapless_flush)
-    actions = [end_of_stream: :output, notify: {:end_of_stream, :input}]
-    {[buffers ++ actions], %{state | queue: ""}}
+    actions = [end_of_stream: :output, notify_parent: {:end_of_stream, :input}]
+    {buffers ++ actions, %{state | queue: ""}}
   end
 
   @impl true
@@ -116,32 +122,31 @@ defmodule Membrane.MP3.Lame.Encoder do
     %{native: native, queue: queue} = state
     to_encode = queue <> data
 
-    {encoded_bufs, bytes_used} = encode_buffer!(native, to_encode)
-
-    if {[], 0} do
-      {[], %{state | queue: to_encode}}
-    else
+    with {:ok, {encoded_bufs, bytes_used}} when bytes_used > 0 <- encode_buffer(native, to_encode) do
       <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
       {[buffer: {:output, encoded_bufs}], %{state | queue: rest}}
+    else
+      {:ok, {[], 0}} -> {[], %{state | queue: to_encode}}
+      {:error, reason} -> raise "Error #{inspect(reason)}"
     end
   end
 
   # init
-  defp encode_buffer!(native, buffer) do
+  defp encode_buffer(native, buffer) do
     raw_frame_size = @samples_per_frame * @sample_size * @channels
 
-    encode_buffer!(native, buffer, [], 0, raw_frame_size)
+    encode_buffer(native, buffer, [], 0, raw_frame_size)
   end
 
   # handle single frame
-  defp encode_buffer!(native, buffer, acc, bytes_used, raw_frame_size)
+  defp encode_buffer(native, buffer, acc, bytes_used, raw_frame_size)
        when byte_size(buffer) >= raw_frame_size do
     <<raw_frame::binary-size(raw_frame_size), rest::binary>> = buffer
 
     with {:ok, encoded_frame} <- Native.encode_frame(raw_frame, native) do
       encoded_buffer = %Buffer{payload: encoded_frame}
 
-      encode_buffer!(
+      encode_buffer(
         native,
         rest,
         [encoded_buffer | acc],
@@ -151,13 +156,13 @@ defmodule Membrane.MP3.Lame.Encoder do
     else
       {:error, reason} ->
         Membrane.Logger.error("Terminating stream because of malformed frame. Reason: #{reason}")
-        raise "Error #{inspect(reason)}"
+        {:error, reason}
     end
   end
 
   # Not enough samples for a frame
-  defp encode_buffer!(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
-    {acc |> Enum.reverse(), bytes_used}
+  defp encode_buffer(_native, _partial_buffer, acc, bytes_used, _raw_frame_size) do
+    {:ok, {acc |> Enum.reverse(), bytes_used}}
   end
 
   defp encode_last_frame!(native, queue, gapless?) do

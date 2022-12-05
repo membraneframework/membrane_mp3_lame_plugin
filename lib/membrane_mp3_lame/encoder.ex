@@ -188,6 +188,6 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   defp map_quality_to_value!(quality) when quality in 0..9, do: quality
 
-  defp map_quality_to_value!(_otherwise),
-    do: raise("Error parsing quality argument #{inspect(:invalid_quality)}")
+  defp map_quality_to_value!(value),
+    do: raise("Error parsing quality argument: #{inspect(value)}")
 end

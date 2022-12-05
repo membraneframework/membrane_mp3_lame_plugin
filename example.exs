@@ -13,7 +13,7 @@ defmodule MP3Encoder.Pipeline do
   alias Membrane.Caps.Audio.Raw
 
   @impl true
-  def handle_init(filename) do
+  def handle_init(_ctx, filename) do
     children = [
       portaudio: Membrane.PortAudio.Source,
       converter: %Converter{
@@ -28,9 +28,9 @@ defmodule MP3Encoder.Pipeline do
       link(:portaudio) |> to(:converter) |> to(:encoder) |> to(:file)
     ]
 
-    {{:ok, spec: %Membrane.ParentSpec{children: children, links: links}}, %{}}
+    {[spec: %Membrane.ParentSpec{children: children, links: links}], %{}}
   end
 end
 
-{:ok, pid} = MP3Encoder.Pipeline.start_link("output.mp3")
+{:ok, _pipeline_supervisor, pid} = MP3Encoder.Pipeline.start_link("output.mp3")
 MP3Encoder.Pipeline.play(pid)

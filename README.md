@@ -14,7 +14,7 @@ It is a part of [Membrane Multimedia Framework](https://membraneframework.org).
 Add the following line to your `deps` in `mix.exs`. Then, run `mix deps.get`.
 
 ```elixir
-	{:membrane_mp3_lame_plugin, "~> 0.14.0"}
+	{:membrane_mp3_lame_plugin, "~> 0.15.0"}
 ```
 
 [Lame encoder library](http://lame.sourceforge.net) is required to use this element.
@@ -44,14 +44,16 @@ sudo pacman -S lame
 sudo dnf install lame-devel
 ```
 
-## Usage 
-You can find an example in [`example.exs`](example.exs), where the `MP3.Lame.Encoder` element 
-was used in a pipeline that redirects audio from default input to an MP3 file. 
+## Usage
+
+You can find an example in [`example.exs`](example.exs), where the `MP3.Lame.Encoder` element
+was used in a pipeline that redirects audio from default input to an MP3 file.
 
 To run the example, you can use the following command:
- ```bash
+
+```bash
 iex example.exs
-``` 
+```
 
 ## Copyright and License
 

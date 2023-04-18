@@ -1,14 +1,14 @@
 defmodule Membrane.MP3.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.14.0"
+  @version "0.15.0"
   @github_url "https://github.com/membraneframework/membrane_mp3_lame_plugin"
 
   def project do
     [
       app: :membrane_mp3_lame_plugin,
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:unifex, :bundlex] ++ Mix.compilers(),
       deps: deps(),

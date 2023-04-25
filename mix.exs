@@ -78,8 +78,8 @@ defmodule Membrane.MP3.Lame.Mixfile do
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:espec, "~> 1.7", only: [:dev, :test]},
       {:membrane_file_plugin, "~> 0.13.0", only: :test},
-      {:credo, "~> 1.6.0", runtime: false},
-      {:dialyxir, ">= 0.0.0", runtime: false}
+      {:credo, "~> 1.6", runtime: false, only: :dev},
+      {:dialyxir, ">= 0.0.0", runtime: false, only: :dev}
     ]
   end
 end

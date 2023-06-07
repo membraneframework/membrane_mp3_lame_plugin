@@ -14,7 +14,7 @@ It is a part of [Membrane Multimedia Framework](https://membraneframework.org).
 Add the following line to your `deps` in `mix.exs`. Then, run `mix deps.get`.
 
 ```elixir
-	{:membrane_mp3_lame_plugin, "~> 0.15.0"}
+{:membrane_mp3_lame_plugin, "~> 0.16.0"}
 ```
 
 [Lame encoder library](http://lame.sourceforge.net) is required to use this element.

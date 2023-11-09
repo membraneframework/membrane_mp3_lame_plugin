@@ -6,7 +6,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
 
   defp make_pipeline(in_path, out_path) do
     Pipeline.start_link_supervised!(
-      structure: [
+      spec: [
         child(:file_src, %Membrane.File.Source{chunk_size: 4096, location: in_path})
         |> child(:encoder, Membrane.MP3.Lame.Encoder)
         |> child(:sink, %Membrane.File.Sink{location: out_path})
@@ -27,7 +27,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     on_exit(fn -> File.rm(out_path) end)
 
     pid = make_pipeline(in_path, out_path)
-    on_exit(fn -> Pipeline.terminate(pid, blocking?: true) end)
+    on_exit(fn -> Pipeline.terminate(pid) end)
 
     assert_end_of_stream(pid, :sink, :input, 300)
     assert_files_equal(out_path, ref_path)

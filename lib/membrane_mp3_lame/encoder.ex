@@ -16,12 +16,9 @@ defmodule Membrane.MP3.Lame.Encoder do
   @sample_size 4
 
   def_output_pad :output,
-    demand_mode: :auto,
     accepted_format: %MPEG{channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
 
   def_input_pad :input,
-    demand_unit: :bytes,
-    demand_mode: :auto,
     accepted_format:
       any_of(
         %RawAudio{sample_format: :s32le, sample_rate: 44_100, channels: 2},
@@ -118,7 +115,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   end
 
   @impl true
-  def handle_process(:input, %Buffer{payload: data}, _ctx, state) do
+  def handle_buffer(:input, %Buffer{payload: data}, _ctx, state) do
     %{native: native, queue: queue} = state
     to_encode = queue <> data
 

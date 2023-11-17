@@ -14,11 +14,10 @@ It is a part of [Membrane Multimedia Framework](https://membraneframework.org).
 Add the following line to your `deps` in `mix.exs`. Then, run `mix deps.get`.
 
 ```elixir
-{:membrane_mp3_lame_plugin, "~> 0.17.0"}
+{:membrane_mp3_lame_plugin, "~> 0.18.0"}
 ```
 
-[Lame encoder library](http://lame.sourceforge.net) is required to use this element.
-You can install it using the following commands:
+This package depends on the [Lame encoder library](http://lame.sourceforge.net) library. The precompiled builds will be pulled and linked automatically. However, should there be any problems, consider installing it manually.
 
 ### MacOS
 

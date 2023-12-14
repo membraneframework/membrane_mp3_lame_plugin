@@ -1,7 +1,7 @@
 defmodule Membrane.MP3.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.18.0"
+  @version "0.18.1"
   @github_url "https://github.com/membraneframework/membrane_mp3_lame_plugin"
 
   def project do
@@ -75,6 +75,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
       {:membrane_common_c, "~> 0.16.0"},
       {:bunch, "~> 1.0"},
       {:bundlex, "~> 1.2"},
+      {:membrane_precompiled_dependency_provider, "~> 0.1.0"},
       {:espec, "~> 1.7", only: [:dev, :test]},
       {:membrane_file_plugin, "~> 0.16.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},

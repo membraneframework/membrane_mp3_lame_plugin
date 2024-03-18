@@ -8,6 +8,14 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     Pipeline.start_link_supervised!(
       spec: [
         child(:file_src, %Membrane.File.Source{chunk_size: 4096, location: in_path})
+        |> child(:parser, %Membrane.RawAudioParser{
+          stream_format: %Membrane.RawAudio{
+            sample_format: :s32le,
+            sample_rate: 44_100,
+            channels: 2
+          },
+          overwrite_pts?: true
+        })
         |> child(:encoder, Membrane.MP3.Lame.Encoder)
         |> child(:sink, %Membrane.File.Sink{location: out_path})
       ]

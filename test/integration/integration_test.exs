@@ -42,7 +42,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
          raw_to_encoded_buffers_ratio
        ) do
     receive do
-      {Membrane.Testing.Pipeline, ^raw_pipeline,
+      {Pipeline, ^raw_pipeline,
        {:handle_child_notification, {{:buffer, %Buffer{pts: raw_pts}}, :sink_raw}}} ->
         encoded_pts =
           case raw_to_encoded_buffers_ratio do
@@ -68,8 +68,9 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
           encoded_pipeline,
           raw_to_encoded_buffers_ratio
         )
-    after
-      0 ->
+
+      {Pipeline, ^raw_pipeline,
+       {:handle_child_notification, {{:end_of_stream, :input}, :sink_raw}}} ->
         :ok
     end
   end

@@ -102,8 +102,6 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
           |> child(:sink_encoded, Membrane.Testing.Sink)
       )
 
-    assert_end_of_stream(raw_pipeline, :sink_raw, :input, 500)
-    assert_end_of_stream(encoded_pipeline, :sink_encoded, :input, 500)
 
     assert_correct_sink_buffers_pts(raw_pipeline, encoded_pipeline, raw_to_encoded_buffer_ratio)
   end

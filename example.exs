@@ -10,27 +10,35 @@ defmodule MP3Encoder.Pipeline do
   use Membrane.Pipeline
 
   alias Membrane.FFmpeg.SWResample.Converter
-  alias Membrane.Caps.Audio.Raw
 
   @impl true
   def handle_init(_ctx, filename) do
-    children = [
-      portaudio: Membrane.PortAudio.Source,
-      converter: %Converter{
-        input_caps: %Raw{channels: 2, format: :s16le, sample_rate: 48_000},
-        output_caps: %Raw{channels: 2, format: :s32le, sample_rate: 44_100}
-      },
-      encoder: Membrane.MP3.Lame.Encoder,
-      file: %Membrane.File.Sink{location: filename}
-    ]
+    spec =
+      child(:portaudio, %Membrane.PortAudio.Source{
+        channels: 2,
+        sample_format: :s16le,
+        sample_rate: 48_000
+      })
+      |> child(:converter, %Converter{
+        input_stream_format: %Membrane.RawAudio{
+          channels: 2,
+          sample_format: :s16le,
+          sample_rate: 48_000
+        },
+        output_stream_format: %Membrane.RawAudio{
+          channels: 2,
+          sample_format: :s32le,
+          sample_rate: 44_100
+        }
+      })
+      |> child(:encoder, Membrane.MP3.Lame.Encoder)
+      |> child(:file, %Membrane.File.Sink{location: filename})
 
-    links = [
-      link(:portaudio) |> to(:converter) |> to(:encoder) |> to(:file)
-    ]
-
-    {[spec: %Membrane.ParentSpec{children: children, links: links}], %{}}
+    {[spec: spec], %{}}
   end
 end
 
-{:ok, _pipeline_supervisor, pid} = MP3Encoder.Pipeline.start_link("output.mp3")
-MP3Encoder.Pipeline.play(pid)
+{:ok, _pipeline_supervisor, _pid} =
+  Membrane.Pipeline.start_link(MP3Encoder.Pipeline, "output.mp3")
+
+# Quit the interactive console with CTRL + C, then listen to your "output.mp3" file

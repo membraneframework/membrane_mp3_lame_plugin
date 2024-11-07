@@ -41,4 +41,4 @@ end
 {:ok, _pipeline_supervisor, _pid} =
   Membrane.Pipeline.start_link(MP3Encoder.Pipeline, "output.mp3")
 
-# Quit the interactive console with CTRL + C, then listen to your "output.mp3" file
+# After speaking into your mic, quit the interactive console with CTRL + C then listen to your "output.mp3" file

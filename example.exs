@@ -20,11 +20,6 @@ defmodule MP3Encoder.Pipeline do
         sample_rate: 48_000
       })
       |> child(:converter, %Converter{
-        input_stream_format: %Membrane.RawAudio{
-          channels: 2,
-          sample_format: :s16le,
-          sample_rate: 48_000
-        },
         output_stream_format: %Membrane.RawAudio{
           channels: 2,
           sample_format: :s32le,

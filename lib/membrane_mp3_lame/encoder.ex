@@ -8,7 +8,7 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   alias __MODULE__.Native
   alias Membrane.Buffer
-  alias Membrane.Caps.Audio.MPEG
+  alias Membrane.MPEGAudio
   alias Membrane.RawAudio
 
   @samples_per_frame 1152
@@ -16,7 +16,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   @sample_size 4
 
   def_output_pad :output,
-    accepted_format: %MPEG{channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
+    accepted_format: %MPEGAudio{channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
 
   def_input_pad :input,
     accepted_format:
@@ -62,7 +62,7 @@ defmodule Membrane.MP3.Lame.Encoder do
        native: nil,
        queue: <<>>,
        options: options,
-       raw_frame_size: MPEG.samples_per_frame(:v1, :layer3) * @sample_size * @channels,
+       raw_frame_size: MPEGAudio.samples_per_frame(:v1, :layer3) * @sample_size * @channels,
        next_frame_pts: nil
      }}
   end
@@ -86,7 +86,7 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   @impl true
   def handle_playing(_ctx, state) do
-    stream_format = %MPEG{
+    stream_format = %MPEGAudio{
       channels: 2,
       sample_rate: 44_100,
       version: :v1,

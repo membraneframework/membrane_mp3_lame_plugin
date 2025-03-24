@@ -18,8 +18,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
       name: "Membrane MP3 Lame Plugin",
       source_url: @github_url,
       homepage_url: "https://membraneframework.org",
-      docs: docs(),
-      preferred_cli_env: [espec: :test, format: :test]
+      docs: docs()
     ]
   end
 
@@ -76,7 +75,6 @@ defmodule Membrane.MP3.Lame.Mixfile do
       {:bunch, "~> 1.0"},
       {:bundlex, "~> 1.2"},
       {:membrane_precompiled_dependency_provider, "~> 0.1.0"},
-      {:espec, "~> 1.7", only: [:dev, :test]},
       {:membrane_file_plugin, "~> 0.16.0", only: :test},
       {:membrane_raw_audio_parser_plugin, "~> 0.4.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},

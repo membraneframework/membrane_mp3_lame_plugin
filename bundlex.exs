@@ -15,7 +15,8 @@ defmodule Membrane.MP3.Lame.BundlexProject do
         deps: [membrane_common_c: :membrane],
         os_deps: [
           mp3lame: [
-            {:precompiled, Membrane.PrecompiledDependencyProvider.get_dependency_url(:lame)},
+            {:precompiled,
+             Membrane.PrecompiledDependencyProvider.get_dependency_url(:lame, version: "3.100")},
             :pkg_config
           ]
         ],

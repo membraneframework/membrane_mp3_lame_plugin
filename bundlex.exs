@@ -17,7 +17,8 @@ defmodule Membrane.MP3.Lame.BundlexProject do
           mp3lame: [
             {:precompiled,
              Membrane.PrecompiledDependencyProvider.get_dependency_url(:lame, version: "3.100")},
-            :pkg_config
+            :pkg_config,
+            {:pkg_config, ["lame"]}
           ]
         ],
         preprocessor: Unifex

@@ -59,12 +59,20 @@ defmodule Membrane.MP3.Lame.Encoder do
                 default: false,
                 description: """
                 When set to true, disables the LAME bit reservoir. This makes each
-                MP3 frame self-contained (main_data_begin is always 0), producing
-                constant-size CBR frames that can be cleanly spliced at any frame
-                boundary without decoder artifacts.
+                MP3 frame self-contained (main_data_begin is always 0), so frames
+                can be cleanly spliced at any boundary without decoder artifacts.
 
                 Useful for live streaming with ad insertion where audio from different
                 sources is concatenated.
+                """
+              ],
+              cbr: [
+                spec: boolean(),
+                default: false,
+                description: """
+                When set to true, explicitly enforces constant bitrate (CBR) mode.
+                CBR is already the LAME default when a bitrate is set, but this
+                option makes it explicit via `lame_set_VBR(vbr_off)`.
                 """
               ]
 
@@ -89,7 +97,8 @@ defmodule Membrane.MP3.Lame.Encoder do
              @channels,
              state.options.bitrate,
              quality_val,
-             state.options.disable_reservoir
+             state.options.disable_reservoir,
+             state.options.cbr
            ) do
       {[], %{state | native: native}}
     else

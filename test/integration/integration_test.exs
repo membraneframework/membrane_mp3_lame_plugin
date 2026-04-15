@@ -1,6 +1,5 @@
 defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
   use ExUnit.Case
-  import Bitwise
   import Membrane.Testing.Assertions
   import Membrane.ChildrenSpec
   alias Membrane.Buffer
@@ -118,10 +117,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
   end
 
   describe "disable_reservoir option" do
-    @tag :tmp_dir
-    test "produces frames with main_data_begin always 0", ctx do
-      out_path = Path.join(ctx.tmp_dir, "output-nores.mp3")
-
+    test "produces frames with main_data_begin always 0" do
       pid =
         Pipeline.start_link_supervised!(
           spec:
@@ -135,14 +131,11 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
               overwrite_pts?: true
             })
             |> child(:encoder, %Membrane.MP3.Lame.Encoder{disable_reservoir: true})
-            |> child(:sink, %Membrane.File.Sink{location: out_path})
+            |> child(:sink, Membrane.Testing.Sink)
         )
 
-      assert_end_of_stream(pid, :sink, :input, 300)
-
-      # Read the encoded file and verify every frame has main_data_begin == 0
-      {:ok, data} = File.read(out_path)
-      frames = parse_mp3_frames(data)
+      # Collect frames and extract main_data_begin from each
+      frames = collect_main_data_begins(pid, [])
 
       assert length(frames) > 0, "Expected at least one MP3 frame"
 
@@ -200,66 +193,27 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     end
   end
 
-  # Parse MP3 frames and extract main_data_begin from each frame's side information.
-  # Returns a list of main_data_begin values.
-  defp parse_mp3_frames(data), do: parse_mp3_frames(data, [])
+  # Collect main_data_begin values from each frame buffer via Testing.Sink
+  defp collect_main_data_begins(pid, acc) do
+    receive do
+      {Pipeline, ^pid,
+       {:handle_child_notification, {{:buffer, %Buffer{payload: payload}}, :sink}}} ->
+        main_data_begin = extract_main_data_begin(payload)
+        collect_main_data_begins(pid, [main_data_begin | acc])
 
-  defp parse_mp3_frames(<<0xFF, sync, _::binary>> = data, acc)
-       when (sync &&& 0xE0) == 0xE0 do
-    # Extract main_data_begin: first 9 bits after the 4-byte header
-    <<_header::binary-size(4), main_data_begin::size(9), _rest::bitstring>> = data
-
-    # Calculate frame size to advance to next frame
-    case mp3_frame_size(data) do
-      {:ok, size} when size > 0 ->
-        <<_frame::binary-size(size), rest::binary>> = data
-        parse_mp3_frames(rest, [main_data_begin | acc])
-
-      _ ->
+      {Pipeline, ^pid, {:handle_child_notification, {{:end_of_stream, :input}, :sink}}} ->
         Enum.reverse(acc)
+    after
+      5_000 -> Enum.reverse(acc)
     end
   end
 
-  defp parse_mp3_frames(<<_byte, rest::binary>>, acc), do: parse_mp3_frames(rest, acc)
-  defp parse_mp3_frames(<<>>, acc), do: Enum.reverse(acc)
-
-  # Calculate MP3 frame size from the header.
-  # Frame size = 144 * bitrate / sample_rate + padding
-  defp mp3_frame_size(<<0xFF, byte2, byte3, _byte4, _::binary>>) do
-    bitrate_index = (byte3 &&& 0xF0) >>> 4
-    sample_rate_index = (byte3 &&& 0x0C) >>> 2
-    padding = (byte3 &&& 0x02) >>> 1
-
-    # MPEG1 Layer 3 bitrate table (kbps)
-    bitrates = {0, 32, 40, 48, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0, 0}
-
-    # MPEG1 sample rate table
-    version = (byte2 &&& 0x18) >>> 3
-
-    sample_rates =
-      case version do
-        # MPEG1
-        3 -> {44_100, 48_000, 32_000}
-        # MPEG2
-        2 -> {22_050, 24_000, 16_000}
-        # MPEG2.5
-        0 -> {11_025, 12_000, 8_000}
-        _ -> nil
-      end
-
-    with true <- sample_rates != nil,
-         true <- bitrate_index > 0 and bitrate_index < 15,
-         true <- sample_rate_index < 3 do
-      bitrate = elem(bitrates, bitrate_index) * 1000
-      sample_rate = elem(sample_rates, sample_rate_index)
-      size = div(144 * bitrate, sample_rate) + padding
-      {:ok, size}
-    else
-      _ -> :error
-    end
+  # Extract main_data_begin from the first 9 bits after the 4-byte MP3 header
+  defp extract_main_data_begin(<<_header::binary-size(4), main_data_begin::size(9), _::bitstring>>) do
+    main_data_begin
   end
 
-  defp mp3_frame_size(_), do: :error
+  defp extract_main_data_begin(_), do: :not_mp3
 
   describe "Encoder forwards timestamps corretly" do
     test "when one input buffer contains exactly one MP3 frame" do

@@ -135,7 +135,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
         )
 
       # Collect frames and extract main_data_begin from each
-      frames = collect_main_data_begins(pid, [])
+      frames = collect_frames(pid, []) |> Enum.map(&extract_main_data_begin/1)
 
       assert length(frames) > 0, "Expected at least one MP3 frame"
 
@@ -165,7 +165,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
         )
 
       # Collect frame sizes from sink buffers
-      frame_sizes = collect_frame_sizes(pid, [])
+      frame_sizes = collect_frames(pid, []) |> Enum.map(&byte_size/1)
 
       assert length(frame_sizes) > 1, "Expected multiple MP3 frames, got #{length(frame_sizes)}"
 
@@ -180,26 +180,11 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     end
   end
 
-  defp collect_frame_sizes(pid, acc) do
+  defp collect_frames(pid, acc) do
     receive do
       {Pipeline, ^pid,
        {:handle_child_notification, {{:buffer, %Buffer{payload: payload}}, :sink}}} ->
-        collect_frame_sizes(pid, [byte_size(payload) | acc])
-
-      {Pipeline, ^pid, {:handle_child_notification, {{:end_of_stream, :input}, :sink}}} ->
-        Enum.reverse(acc)
-    after
-      5_000 -> Enum.reverse(acc)
-    end
-  end
-
-  # Collect main_data_begin values from each frame buffer via Testing.Sink
-  defp collect_main_data_begins(pid, acc) do
-    receive do
-      {Pipeline, ^pid,
-       {:handle_child_notification, {{:buffer, %Buffer{payload: payload}}, :sink}}} ->
-        main_data_begin = extract_main_data_begin(payload)
-        collect_main_data_begins(pid, [main_data_begin | acc])
+        collect_frames(pid, [payload | acc])
 
       {Pipeline, ^pid, {:handle_child_notification, {{:end_of_stream, :input}, :sink}}} ->
         Enum.reverse(acc)
@@ -209,7 +194,9 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
   end
 
   # Extract main_data_begin from the first 9 bits after the 4-byte MP3 header
-  defp extract_main_data_begin(<<_header::binary-size(4), main_data_begin::size(9), _::bitstring>>) do
+  defp extract_main_data_begin(
+         <<_header::binary-size(4), main_data_begin::size(9), _::bitstring>>
+       ) do
     main_data_begin
   end
 

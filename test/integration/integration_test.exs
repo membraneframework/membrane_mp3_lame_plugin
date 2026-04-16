@@ -1,4 +1,8 @@
 defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
+  @moduledoc """
+  Integration tests for the Membrane MP3 LAME encoder plugin.
+  """
+
   use ExUnit.Case
   import Membrane.Testing.Assertions
   import Membrane.ChildrenSpec
@@ -137,7 +141,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
       # Collect frames and extract main_data_begin from each
       frames = collect_frames(pid, []) |> Enum.map(&extract_main_data_begin/1)
 
-      assert length(frames) > 0, "Expected at least one MP3 frame"
+      assert frames != [], "Expected at least one MP3 frame"
 
       for {main_data_begin, idx} <- Enum.with_index(frames) do
         assert main_data_begin == 0,
@@ -195,14 +199,14 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
 
   # Extract main_data_begin from the first 9 bits after the 4-byte MP3 header
   defp extract_main_data_begin(
-         <<_header::binary-size(4), main_data_begin::size(9), _::bitstring>>
+         <<_header::binary-size(4), main_data_begin::size(9), _remaining::bitstring>>
        ) do
     main_data_begin
   end
 
-  defp extract_main_data_begin(_), do: :not_mp3
+  defp extract_main_data_begin(_data), do: :not_mp3
 
-  describe "Encoder forwards timestamps corretly" do
+  describe "Encoder forwards timestamps correctly" do
     test "when one input buffer contains exactly one MP3 frame" do
       perform_timestamp_test(@raw_frame_size, :one_to_one)
     end

@@ -1,4 +1,8 @@
 defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
+  @moduledoc """
+  Integration tests for the Membrane MP3 LAME encoder plugin.
+  """
+
   use ExUnit.Case
   import Membrane.Testing.Assertions
   import Membrane.ChildrenSpec
@@ -116,7 +120,93 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     Pipeline.terminate(pid)
   end
 
-  describe "Encoder forwards timestamps corretly" do
+  describe "disable_reservoir option" do
+    test "produces frames with main_data_begin always 0" do
+      pid =
+        Pipeline.start_link_supervised!(
+          spec:
+            child(:file_src, %Membrane.File.Source{chunk_size: 4096, location: @in_path})
+            |> child(:parser, %Membrane.RawAudioParser{
+              stream_format: %Membrane.RawAudio{
+                sample_format: :s32le,
+                sample_rate: 44_100,
+                channels: 2
+              },
+              overwrite_pts?: true
+            })
+            |> child(:encoder, %Membrane.MP3.Lame.Encoder{disable_reservoir: true})
+            |> child(:sink, Membrane.Testing.Sink)
+        )
+
+      # Collect frames and extract main_data_begin from each
+      frames = collect_frames(pid, []) |> Enum.map(&extract_main_data_begin/1)
+
+      assert frames != [], "Expected at least one MP3 frame"
+
+      for {main_data_begin, idx} <- Enum.with_index(frames) do
+        assert main_data_begin == 0,
+               "Frame #{idx} has main_data_begin=#{main_data_begin}, expected 0"
+      end
+    end
+  end
+
+  describe "cbr option" do
+    test "produces constant-size frame buffers" do
+      pid =
+        Pipeline.start_link_supervised!(
+          spec:
+            child(:file_src, %Membrane.File.Source{chunk_size: 4096, location: @in_path})
+            |> child(:parser, %Membrane.RawAudioParser{
+              stream_format: %Membrane.RawAudio{
+                sample_format: :s32le,
+                sample_rate: 44_100,
+                channels: 2
+              },
+              overwrite_pts?: true
+            })
+            |> child(:encoder, %Membrane.MP3.Lame.Encoder{cbr: true, disable_reservoir: true})
+            |> child(:sink, Membrane.Testing.Sink)
+        )
+
+      # Collect frame sizes from sink buffers
+      frame_sizes = collect_frames(pid, []) |> Enum.map(&byte_size/1)
+
+      assert length(frame_sizes) > 1, "Expected multiple MP3 frames, got #{length(frame_sizes)}"
+
+      # CBR frames should be constant size, with at most 1-byte variation
+      # from the MP3 padding bit (used to maintain exact average bitrate).
+      # Allow the last frame to differ (flush frame may be shorter).
+      main_sizes = Enum.drop(frame_sizes, -1)
+      {min_size, max_size} = Enum.min_max(main_sizes)
+
+      assert max_size - min_size <= 1,
+             "Expected constant frame size (±1 byte padding), got range #{min_size}..#{max_size}: #{inspect(Enum.frequencies(main_sizes))}"
+    end
+  end
+
+  defp collect_frames(pid, acc) do
+    receive do
+      {Pipeline, ^pid,
+       {:handle_child_notification, {{:buffer, %Buffer{payload: payload}}, :sink}}} ->
+        collect_frames(pid, [payload | acc])
+
+      {Pipeline, ^pid, {:handle_child_notification, {{:end_of_stream, :input}, :sink}}} ->
+        Enum.reverse(acc)
+    after
+      5_000 -> Enum.reverse(acc)
+    end
+  end
+
+  # Extract main_data_begin from the first 9 bits after the 4-byte MP3 header
+  defp extract_main_data_begin(
+         <<_header::binary-size(4), main_data_begin::size(9), _remaining::bitstring>>
+       ) do
+    main_data_begin
+  end
+
+  defp extract_main_data_begin(_data), do: :not_mp3
+
+  describe "Encoder forwards timestamps correctly" do
     test "when one input buffer contains exactly one MP3 frame" do
       perform_timestamp_test(@raw_frame_size, :one_to_one)
     end

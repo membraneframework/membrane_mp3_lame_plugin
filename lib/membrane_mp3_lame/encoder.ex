@@ -53,6 +53,27 @@ defmodule Membrane.MP3.Lame.Encoder do
                   * `5` - good quality, fast
                   * `7` - ok quality, really fast
                 """
+              ],
+              disable_reservoir: [
+                spec: boolean(),
+                default: false,
+                description: """
+                When set to true, disables the LAME bit reservoir. This makes each
+                MP3 frame self-contained (main_data_begin is always 0), so frames
+                can be cleanly spliced at any boundary without decoder artifacts.
+
+                Useful for live streaming with ad insertion where audio from different
+                sources is concatenated.
+                """
+              ],
+              cbr: [
+                spec: boolean(),
+                default: false,
+                description: """
+                When set to true, explicitly enforces constant bitrate (CBR) mode.
+                CBR is already the LAME default when a bitrate is set, but this
+                option makes it explicit via `lame_set_VBR(vbr_off)`.
+                """
               ]
 
   @impl true
@@ -75,7 +96,9 @@ defmodule Membrane.MP3.Lame.Encoder do
            Native.create(
              @channels,
              state.options.bitrate,
-             quality_val
+             quality_val,
+             state.options.disable_reservoir,
+             state.options.cbr
            ) do
       {[], %{state | native: native}}
     else

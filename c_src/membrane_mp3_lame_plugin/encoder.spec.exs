@@ -1,6 +1,21 @@
 module Membrane.MP3.Lame.Encoder.Native
 
-spec create(channels :: int, bitrate :: int, quality :: int, disable_reservoir :: bool, cbr :: bool) ::
+type rate_control :: %Membrane.MP3.Lame.Encoder.RateControl{
+       type: int,
+       quality: int,
+       mean_bitrate: int,
+       min_bitrate: int,
+       max_bitrate: int,
+       hard_min: bool
+     }
+
+spec create(
+       channels :: int,
+       bitrate :: int,
+       quality :: int,
+       disable_reservoir :: bool,
+       rate_control :: rate_control
+     ) ::
        {:ok :: label, state} | {:error :: label, reason :: atom}
 
 spec encode_frame(buffer :: payload, state) ::

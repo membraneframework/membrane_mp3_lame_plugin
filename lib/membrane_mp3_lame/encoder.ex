@@ -6,7 +6,7 @@ defmodule Membrane.MP3.Lame.Encoder do
 
   require Membrane.Logger
 
-  alias __MODULE__.Native
+  alias __MODULE__.{Native, RateControl}
   alias Membrane.Buffer
   alias Membrane.MPEGAudio
   alias Membrane.RawAudio
@@ -14,6 +14,32 @@ defmodule Membrane.MP3.Lame.Encoder do
   @samples_per_frame 1152
   @channels 2
   @sample_size 4
+
+  @typedoc """
+  VBR configuration for the `rate_control` option.
+
+  Available options:
+  * `:mode` (required) - Sets the algorithm via `lame_set_VBR/2`.
+  * `:mean_bitrate` (required for `:abr`, not allowed otherwise) -
+    target average bitrate in kbps. Calls  `lame_set_VBR_mean_bitrate_kbps/2`.
+  * `:quality` (only for `:rh`, `:mt`, `:mtrh`, `:default`) -
+    VBR quality level 0..9 (0 = best, 9 = worst). Calls
+    `lame_set_VBR_q/2`. If omitted, LAME's default is used.
+  * `:min_bitrate` - minimum allowed bitrate in kbps. See
+    `lame_set_VBR_min_bitrate_kbps` for reference.
+  * `:max_bitrate` - maximum allowed bitrate in kbps. Calls
+    `lame_set_VBR_max_bitrate_kbps/2`.
+  * `:hard_min` (boolean) - strictly enforce `:min_bitrate` even
+    for silence. Calls `lame_set_VBR_hard_min/2`.
+  """
+  @type vbr_config :: [
+          mode: :mt | :rh | :abr | :mtrh | :default,
+          mean_bitrate: pos_integer(),
+          quality: 0..9,
+          min_bitrate: pos_integer(),
+          max_bitrate: pos_integer(),
+          hard_min: boolean()
+        ]
 
   def_output_pad :output,
     accepted_format: %MPEGAudio{channels: 2, sample_rate: 44_100, layer: :layer3, version: :v1}
@@ -66,13 +92,14 @@ defmodule Membrane.MP3.Lame.Encoder do
                 sources is concatenated.
                 """
               ],
-              cbr: [
-                spec: boolean(),
-                default: false,
+              rate_control: [
+                spec: :cbr | {:vbr, vbr_config()},
+                default: :cbr,
                 description: """
-                When set to true, explicitly enforces constant bitrate (CBR) mode.
-                CBR is already the LAME default when a bitrate is set, but this
-                option makes it explicit via `lame_set_VBR(vbr_off)`.
+                Rate control mode for the encoder:
+                  * `:cbr` - Constant Bitrate. The output bitrate is fixed at the value
+                    of the `bitrate` option.
+                  * `{:vbr, config}` - Variable Bitrate. See `t:vbr_config/0` for details.
                 """
               ]
 
@@ -91,6 +118,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   @impl true
   def handle_setup(_ctx, state) do
     quality_val = state.options.quality |> map_quality_to_value!
+    rate_control = RateControl.parse!(state.options.rate_control)
 
     with {:ok, native} <-
            Native.create(
@@ -98,7 +126,7 @@ defmodule Membrane.MP3.Lame.Encoder do
              state.options.bitrate,
              quality_val,
              state.options.disable_reservoir,
-             state.options.cbr
+             rate_control
            ) do
       {[], %{state | native: native}}
     else

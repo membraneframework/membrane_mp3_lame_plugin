@@ -21,7 +21,8 @@ void handle_destroy_state(UnifexEnv *env, State *state) {
   }
 }
 
-UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality, int disable_reservoir, int cbr) {
+UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality,
+                   int disable_reservoir, rate_control rate_control) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
   state->lame_state = NULL;
@@ -40,8 +41,24 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality, int d
   lame_set_brate(lame_state, bitrate);
   lame_set_quality(lame_state, quality);
 
-  if (cbr) {
-    lame_set_VBR(lame_state, vbr_off);
+  lame_set_VBR(lame_state, (vbr_mode)rate_control.type);
+
+  if (rate_control.type != vbr_off) {
+    if (rate_control.quality != -1) {
+      lame_set_VBR_q(lame_state, rate_control.quality);
+    }
+    if (rate_control.mean_bitrate != -1) {
+      lame_set_VBR_mean_bitrate_kbps(lame_state, rate_control.mean_bitrate);
+    }
+    if (rate_control.min_bitrate != -1) {
+      lame_set_VBR_min_bitrate_kbps(lame_state, rate_control.min_bitrate);
+    }
+    if (rate_control.max_bitrate != -1) {
+      lame_set_VBR_max_bitrate_kbps(lame_state, rate_control.max_bitrate);
+    }
+    if (rate_control.hard_min) {
+      lame_set_VBR_hard_min(lame_state, 1);
+    }
   }
 
   if (disable_reservoir) {
@@ -125,7 +142,7 @@ UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
   }
   UnifexPayload *output_payload = (UnifexPayload *)unifex_alloc(sizeof(UnifexPayload));
   unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size, output_payload);
-  
+
   memcpy(output_payload->data, state->mp3_buffer, output_size);
 
   UNIFEX_TERM res_term = flush_result_ok(env, output_payload);

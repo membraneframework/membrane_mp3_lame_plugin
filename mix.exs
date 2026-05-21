@@ -44,7 +44,7 @@ defmodule Membrane.MP3.Lame.Mixfile do
   defp package do
     [
       maintainers: ["Membrane Team"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       files: ["c_src", "lib", "mix.exs", "README*", "LICENSE*", ".formatter.exs", "bundlex.exs"],
       links: %{
         "GitHub" => @github_url,

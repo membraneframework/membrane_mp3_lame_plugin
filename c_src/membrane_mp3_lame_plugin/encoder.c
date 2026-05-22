@@ -44,8 +44,8 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality,
   lame_set_VBR(lame_state, (vbr_mode)rate_control.type);
 
   if (rate_control.type != vbr_off) {
-    if (rate_control.quality != -1) {
-      lame_set_VBR_q(lame_state, rate_control.quality);
+    if (rate_control.quality >= 0) {
+      lame_set_VBR_quality(lame_state, (float)rate_control.quality);
     }
     if (rate_control.mean_bitrate != -1) {
       lame_set_VBR_mean_bitrate_kbps(lame_state, rate_control.mean_bitrate);

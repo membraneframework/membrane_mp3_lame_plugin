@@ -2,7 +2,7 @@ module Membrane.MP3.Lame.Encoder.Native
 
 type rate_control :: %Membrane.MP3.Lame.Encoder.RateControl{
        type: int,
-       quality: int,
+       quality: float,
        mean_bitrate: int,
        min_bitrate: int,
        max_bitrate: int,

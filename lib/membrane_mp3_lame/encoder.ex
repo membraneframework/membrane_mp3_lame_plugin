@@ -26,8 +26,9 @@ defmodule Membrane.MP3.Lame.Encoder do
   * `:mean_bitrate` (required for `:abr`, not allowed otherwise) -
     target average bitrate in kbps. Calls  `lame_set_VBR_mean_bitrate_kbps`.
   * `:quality` (only for `:rh`, `:mt`, `:mtrh`, `:default`) -
-    VBR quality level 0..9 (0 = best, 9 = worst). Calls
-    `lame_set_VBR_q`. If omitted, LAME's default is used.
+    VBR quality level as a number in `[0, 10)` (0 = best, 9 = worst).
+    Calls `lame_set_VBR_quality`, which accepts fractional values
+    for finer-grained control. If omitted, LAME's default is used.
   * `:min_bitrate` - minimum allowed bitrate in kbps. See
     `lame_set_VBR_min_bitrate_kbps` for reference.
   * `:max_bitrate` - maximum allowed bitrate in kbps. Calls
@@ -38,7 +39,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   @type vbr_config :: [
           mode: :mt | :rh | :abr | :mtrh | :default,
           mean_bitrate: pos_integer(),
-          quality: 0..9,
+          quality: number(),
           min_bitrate: pos_integer(),
           max_bitrate: pos_integer(),
           hard_min: boolean()

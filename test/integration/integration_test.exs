@@ -193,7 +193,7 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     end
 
     test "{:vbr, mode: :mtrh} produces varying frame sizes" do
-      frame_sizes = run_encoder({:vbr, mode: :mtrh, quality: 4}) |> Enum.map(&byte_size/1)
+      frame_sizes = run_encoder({:vbr, mode: :mtrh, quality: 4.5}) |> Enum.map(&byte_size/1)
 
       assert length(frame_sizes) > 1, "Expected multiple MP3 frames, got #{length(frame_sizes)}"
 

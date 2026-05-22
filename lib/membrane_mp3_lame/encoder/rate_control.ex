@@ -12,7 +12,7 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
   def parse!(:cbr) do
     %__MODULE__{
       type: @vbr_off,
-      quality: -1,
+      quality: -1.0,
       mean_bitrate: -1,
       min_bitrate: -1,
       max_bitrate: -1,
@@ -41,7 +41,7 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
 
     %__MODULE__{
       type: Map.fetch!(@vbr_mode_to_int, config.mode),
-      quality: config.quality || -1,
+      quality: (config.quality || -1) * 1.0,
       mean_bitrate: config.mean_bitrate || -1,
       min_bitrate: config.min_bitrate || -1,
       max_bitrate: config.max_bitrate || -1,
@@ -75,8 +75,9 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
       raise ArgumentError, ":quality is not applicable for :abr VBR mode"
     end
 
-    unless config.quality == nil or config.quality in 0..9 do
-      raise ArgumentError, "VBR :quality must be in 0..9, got: #{inspect(config.quality)}"
+    unless config.quality == nil or (config.quality >= 0 and config.quality < 10) do
+      raise ArgumentError,
+            "VBR :quality must be a number in [0, 10) range, got: #{inspect(config.quality)}"
     end
 
     for {key, value} <- Map.take(config, [:mean_bitrate, :min_bitrate, :max_bitrate]),

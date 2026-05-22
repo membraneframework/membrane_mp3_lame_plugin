@@ -18,19 +18,22 @@ defmodule Membrane.MP3.Lame.Encoder do
   @typedoc """
   VBR configuration for the `rate_control` option.
 
+  For details, see Lame's header file:
+  https://sourceforge.net/p/lame/svn/HEAD/tree/trunk/lame/include/lame.h
+
   Available options:
-  * `:mode` (required) - Sets the algorithm via `lame_set_VBR/2`.
+  * `:mode` (required) - Sets the algorithm via `lame_set_VBR`.
   * `:mean_bitrate` (required for `:abr`, not allowed otherwise) -
-    target average bitrate in kbps. Calls  `lame_set_VBR_mean_bitrate_kbps/2`.
+    target average bitrate in kbps. Calls  `lame_set_VBR_mean_bitrate_kbps`.
   * `:quality` (only for `:rh`, `:mt`, `:mtrh`, `:default`) -
     VBR quality level 0..9 (0 = best, 9 = worst). Calls
-    `lame_set_VBR_q/2`. If omitted, LAME's default is used.
+    `lame_set_VBR_q`. If omitted, LAME's default is used.
   * `:min_bitrate` - minimum allowed bitrate in kbps. See
     `lame_set_VBR_min_bitrate_kbps` for reference.
   * `:max_bitrate` - maximum allowed bitrate in kbps. Calls
-    `lame_set_VBR_max_bitrate_kbps/2`.
+    `lame_set_VBR_max_bitrate_kbps`.
   * `:hard_min` (boolean) - strictly enforce `:min_bitrate` even
-    for silence. Calls `lame_set_VBR_hard_min/2`.
+    for silence. Calls `lame_set_VBR_hard_min`.
   """
   @type vbr_config :: [
           mode: :mt | :rh | :abr | :mtrh | :default,

@@ -210,9 +210,9 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
       # average, verify that doubling the target meaningfully increases the
       # average frame size.
       low_avg = run_encoder({:vbr, mode: :abr, mean_bitrate: 64}) |> avg_frame_size()
-      high_avg = run_encoder({:vbr, mode: :abr, mean_bitrate: 256}) |> avg_frame_size()
+      high_avg = run_encoder({:vbr, mode: :abr, mean_bitrate: 128}) |> avg_frame_size()
 
-      assert high_avg > low_avg * 1.3,
+      assert high_avg > low_avg * 1.5,
              "Expected higher :mean_bitrate to yield larger average frames, got #{low_avg} vs #{high_avg}"
     end
 

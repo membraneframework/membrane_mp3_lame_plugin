@@ -150,8 +150,10 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
     end
   end
 
-  describe "cbr option" do
-    test "produces constant-size frame buffers" do
+  describe "rate_control option" do
+    defp run_encoder(rate_control, opts \\ []) do
+      disable_reservoir = Keyword.get(opts, :disable_reservoir, false)
+
       pid =
         Pipeline.start_link_supervised!(
           spec:
@@ -164,23 +166,78 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
               },
               overwrite_pts?: true
             })
-            |> child(:encoder, %Membrane.MP3.Lame.Encoder{cbr: true, disable_reservoir: true})
+            |> child(:encoder, %Membrane.MP3.Lame.Encoder{
+              rate_control: rate_control,
+              disable_reservoir: disable_reservoir
+            })
             |> child(:sink, Membrane.Testing.Sink)
         )
 
-      # Collect frame sizes from sink buffers
-      frame_sizes = collect_frames(pid, []) |> Enum.map(&byte_size/1)
+      frames = collect_frames(pid, [])
+      Pipeline.terminate(pid)
+      frames
+    end
+
+    test ":cbr produces constant-size frame buffers" do
+      frame_sizes = run_encoder(:cbr, disable_reservoir: true) |> Enum.map(&byte_size/1)
 
       assert length(frame_sizes) > 1, "Expected multiple MP3 frames, got #{length(frame_sizes)}"
 
       # CBR frames should be constant size, with at most 1-byte variation
-      # from the MP3 padding bit (used to maintain exact average bitrate).
-      # Allow the last frame to differ (flush frame may be shorter).
+      # from the MP3 padding bit. Allow the last (flush) frame to differ.
       main_sizes = Enum.drop(frame_sizes, -1)
       {min_size, max_size} = Enum.min_max(main_sizes)
 
       assert max_size - min_size <= 1,
              "Expected constant frame size (±1 byte padding), got range #{min_size}..#{max_size}: #{inspect(Enum.frequencies(main_sizes))}"
+    end
+
+    test "{:cbr, bitrate: N} scales frame size with the requested bitrate" do
+      low_avg = run_encoder({:cbr, bitrate: 64}) |> avg_frame_size()
+      high_avg = run_encoder({:cbr, bitrate: 192}) |> avg_frame_size()
+
+      assert high_avg > low_avg * 2,
+             "Expected higher CBR bitrate to yield larger frames, got #{low_avg} vs #{high_avg}"
+    end
+
+    test "{:cbr, bitrate: N} validates that bitrate is a positive integer" do
+      assert_raise ArgumentError, ~r/CBR :bitrate must be a positive integer/, fn ->
+        Membrane.MP3.Lame.Encoder.RateControl.parse!({:cbr, bitrate: 0})
+      end
+
+      assert_raise ArgumentError, ~r/CBR :bitrate must be a positive integer/, fn ->
+        Membrane.MP3.Lame.Encoder.RateControl.parse!({:cbr, bitrate: -1})
+      end
+    end
+
+    test "{:vbr, mode: :mtrh} produces varying frame sizes" do
+      frame_sizes = run_encoder({:vbr, mode: :mtrh, quality: 4.5}) |> Enum.map(&byte_size/1)
+
+      assert length(frame_sizes) > 1, "Expected multiple MP3 frames, got #{length(frame_sizes)}"
+
+      main_sizes = Enum.drop(frame_sizes, -1)
+      {min_size, max_size} = Enum.min_max(main_sizes)
+
+      assert max_size - min_size > 1,
+             "Expected varying VBR frame sizes, got range #{min_size}..#{max_size}"
+    end
+
+    test "{:vbr, mode: :abr, mean_bitrate: _} scales average frame size with target" do
+      # ABR is a soft target — for highly compressible audio LAME produces
+      # frames well below the requested mean. Instead of asserting a precise
+      # average, verify that doubling the target meaningfully increases the
+      # average frame size.
+      low_avg = run_encoder({:vbr, mode: :abr, mean_bitrate: 64}) |> avg_frame_size()
+      high_avg = run_encoder({:vbr, mode: :abr, mean_bitrate: 128}) |> avg_frame_size()
+
+      assert high_avg > low_avg * 1.5,
+             "Expected higher :mean_bitrate to yield larger average frames, got #{low_avg} vs #{high_avg}"
+    end
+
+    defp avg_frame_size(frames) do
+      # Drop the last frame as it may be shorter
+      main = Enum.drop(frames, -1)
+      Enum.sum(Enum.map(main, &byte_size/1)) / length(main)
     end
   end
 

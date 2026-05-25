@@ -1,7 +1,7 @@
 defmodule Membrane.MP3.Lame.Mixfile do
   use Mix.Project
 
-  @version "0.18.5"
+  @version "0.18.6"
   @github_url "https://github.com/membraneframework/membrane_mp3_lame_plugin"
 
   def project do

@@ -5,13 +5,36 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
   @vbr_mode_to_int %{mt: 1, rh: 2, abr: 3, mtrh: 4, default: 4}
   @valid_vbr_modes Map.keys(@vbr_mode_to_int)
 
-  @enforce_keys [:type, :quality, :mean_bitrate, :min_bitrate, :max_bitrate, :hard_min]
+  @enforce_keys [
+    :type,
+    :bitrate,
+    :quality,
+    :mean_bitrate,
+    :min_bitrate,
+    :max_bitrate,
+    :hard_min
+  ]
   defstruct @enforce_keys
 
-  @spec parse!(:cbr | {:vbr, Keyword.t()}) :: %__MODULE__{}
-  def parse!(:cbr) do
+  @spec parse!(:cbr | {:cbr | :vbr, Keyword.t()}) :: %__MODULE__{}
+  def parse!(:cbr), do: parse!({:cbr, []})
+
+  def parse!({:cbr, config}) when is_list(config) do
+    unless Keyword.keyword?(config) do
+      raise ArgumentError, "CBR config must be a keyword list, got: #{inspect(config)}"
+    end
+
+    config = Keyword.validate!(config, bitrate: 192)
+    bitrate = Keyword.fetch!(config, :bitrate)
+
+    unless is_integer(bitrate) and bitrate > 0 do
+      raise ArgumentError,
+            "CBR :bitrate must be a positive integer (kbps), got: #{inspect(bitrate)}"
+    end
+
     %__MODULE__{
       type: @vbr_off,
+      bitrate: bitrate,
       quality: -1.0,
       mean_bitrate: -1,
       min_bitrate: -1,
@@ -41,6 +64,7 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
 
     %__MODULE__{
       type: Map.fetch!(@vbr_mode_to_int, config.mode),
+      bitrate: -1,
       quality: (config.quality || -1) * 1.0,
       mean_bitrate: config.mean_bitrate || -1,
       min_bitrate: config.min_bitrate || -1,
@@ -50,8 +74,7 @@ defmodule Membrane.MP3.Lame.Encoder.RateControl do
   end
 
   def parse!(value) do
-    raise ArgumentError,
-          "Invalid rate_control: expected :cbr or {:vbr, keyword()}, got: #{inspect(value)}"
+    raise ArgumentError, "Invalid rate_control: #{inspect(value)}"
   end
 
   # LLM-generated validation

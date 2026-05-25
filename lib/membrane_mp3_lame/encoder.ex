@@ -65,10 +65,13 @@ defmodule Membrane.MP3.Lame.Encoder do
                 """
               ],
               bitrate: [
-                spec: integer(),
-                default: 192,
+                spec: pos_integer() | nil,
+                default: nil,
                 description: """
-                Output bitrate of encoded stream in kbit/sec.
+                Deprecated: pass the bitrate via the `rate_control` option instead,
+                e.g. `rate_control: {:cbr, bitrate: 192}`.
+
+                Output bitrate of encoded stream in kbit/sec, defaults to 192.
                 """
               ],
               quality: [
@@ -97,12 +100,12 @@ defmodule Membrane.MP3.Lame.Encoder do
                 """
               ],
               rate_control: [
-                spec: :cbr | {:vbr, vbr_config()},
+                spec: :cbr | {:cbr, bitrate: pos_integer()} | {:vbr, vbr_config()},
                 default: :cbr,
                 description: """
                 Rate control mode for the encoder:
-                  * `:cbr` - Constant Bitrate. The output bitrate is fixed at the value
-                    of the `bitrate` option.
+                  * `:cbr` - Constant Bitrate at the default bitrate (192 kbps).
+                  * `{:cbr, bitrate: kbps}` - Constant Bitrate at the given bitrate.
                   * `{:vbr, config}` - Variable Bitrate. See `t:vbr_config/0` for details.
                 """
               ]
@@ -122,12 +125,15 @@ defmodule Membrane.MP3.Lame.Encoder do
   @impl true
   def handle_setup(_ctx, state) do
     quality_val = state.options.quality |> map_quality_to_value!
-    rate_control = RateControl.parse!(state.options.rate_control)
+
+    rate_control =
+      state.options.rate_control
+      |> apply_legacy_bitrate(state.options.bitrate)
+      |> RateControl.parse!()
 
     with {:ok, native} <-
            Native.create(
              @channels,
-             state.options.bitrate,
              quality_val,
              state.options.disable_reservoir,
              rate_control
@@ -137,6 +143,17 @@ defmodule Membrane.MP3.Lame.Encoder do
       {:error, reason} ->
         raise "Error initializing mpeg: #{inspect(reason)}"
     end
+  end
+
+  defp apply_legacy_bitrate(rate_control, nil), do: rate_control
+
+  defp apply_legacy_bitrate(rate_control, legacy_bitrate) do
+    Membrane.Logger.warning("""
+    The `bitrate` option is deprecated. Pass the bitrate via `rate_control: \
+    {:cbr, bitrate: #{legacy_bitrate}}` instead.
+    """)
+
+    if rate_control == :cbr, do: {:cbr, bitrate: legacy_bitrate}, else: rate_control
   end
 
   @impl true

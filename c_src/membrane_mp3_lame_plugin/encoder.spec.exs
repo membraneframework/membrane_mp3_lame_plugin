@@ -2,6 +2,7 @@ module Membrane.MP3.Lame.Encoder.Native
 
 type rate_control :: %Membrane.MP3.Lame.Encoder.RateControl{
        type: int,
+       bitrate: int,
        quality: float,
        mean_bitrate: int,
        min_bitrate: int,
@@ -11,7 +12,6 @@ type rate_control :: %Membrane.MP3.Lame.Encoder.RateControl{
 
 spec create(
        channels :: int,
-       bitrate :: int,
        quality :: int,
        disable_reservoir :: bool,
        rate_control :: rate_control

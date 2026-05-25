@@ -192,6 +192,24 @@ defmodule Membrane.MP3.Lame.Encoder.IntegrationTest do
              "Expected constant frame size (±1 byte padding), got range #{min_size}..#{max_size}: #{inspect(Enum.frequencies(main_sizes))}"
     end
 
+    test "{:cbr, bitrate: N} scales frame size with the requested bitrate" do
+      low_avg = run_encoder({:cbr, bitrate: 64}) |> avg_frame_size()
+      high_avg = run_encoder({:cbr, bitrate: 192}) |> avg_frame_size()
+
+      assert high_avg > low_avg * 2,
+             "Expected higher CBR bitrate to yield larger frames, got #{low_avg} vs #{high_avg}"
+    end
+
+    test "{:cbr, bitrate: N} validates that bitrate is a positive integer" do
+      assert_raise ArgumentError, ~r/CBR :bitrate must be a positive integer/, fn ->
+        Membrane.MP3.Lame.Encoder.RateControl.parse!({:cbr, bitrate: 0})
+      end
+
+      assert_raise ArgumentError, ~r/CBR :bitrate must be a positive integer/, fn ->
+        Membrane.MP3.Lame.Encoder.RateControl.parse!({:cbr, bitrate: -1})
+      end
+    end
+
     test "{:vbr, mode: :mtrh} produces varying frame sizes" do
       frame_sizes = run_encoder({:vbr, mode: :mtrh, quality: 4.5}) |> Enum.map(&byte_size/1)
 

@@ -21,7 +21,7 @@ void handle_destroy_state(UnifexEnv *env, State *state) {
   }
 }
 
-UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality,
+UNIFEX_TERM create(UnifexEnv *env, int channels, int quality,
                    int disable_reservoir, rate_control rate_control) {
   UNIFEX_TERM result;
   State *state = unifex_alloc_state(env);
@@ -38,12 +38,15 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int bitrate, int quality,
 
   lame_set_num_channels(lame_state, channels);
   lame_set_in_samplerate(lame_state, 44100);
-  lame_set_brate(lame_state, bitrate);
   lame_set_quality(lame_state, quality);
 
   lame_set_VBR(lame_state, (vbr_mode)rate_control.type);
 
-  if (rate_control.type != vbr_off) {
+  if (rate_control.type == vbr_off) {
+    if (rate_control.bitrate != -1) {
+      lame_set_brate(lame_state, rate_control.bitrate);
+    }
+  } else {
     if (rate_control.quality >= 0) {
       lame_set_VBR_quality(lame_state, (float)rate_control.quality);
     }

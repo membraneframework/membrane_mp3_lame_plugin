@@ -199,7 +199,7 @@ defmodule Membrane.MP3.Lame.Encoder do
         {[], %{state | queue: to_encode, next_frame_pts: next_frame_pts}}
 
       {:ok, {encoded_bufs, bytes_used}} ->
-        <<_handled::binary-size(bytes_used), rest::binary>> = to_encode
+        <<_handled::binary-size(^bytes_used), rest::binary>> = to_encode
         {[buffer: {:output, encoded_bufs}], %{state | queue: rest, next_frame_pts: pts}}
 
       {:error, reason} ->
@@ -217,7 +217,7 @@ defmodule Membrane.MP3.Lame.Encoder do
   # handle single frame
   defp encode_buffer(native, buffer, this_frame_pts, rest_pts, acc, bytes_used, raw_frame_size)
        when byte_size(buffer) >= raw_frame_size do
-    <<raw_frame::binary-size(raw_frame_size), rest::binary>> = buffer
+    <<raw_frame::binary-size(^raw_frame_size), rest::binary>> = buffer
 
     case Native.encode_frame(raw_frame, native) do
       {:ok, encoded_frame} ->

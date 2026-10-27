@@ -143,6 +143,10 @@ UNIFEX_TERM flush(UnifexEnv *env, int is_gapless, State *state) {
     output_size = lame_encode_flush(state->lame_state, state->mp3_buffer,
                                     MAX_MP3_BUFFER_SIZE);
   }
+  if (output_size < 0) {
+    return flush_result_error(env, "buflen");
+  }
+
   UnifexPayload *output_payload = (UnifexPayload *)unifex_alloc(sizeof(UnifexPayload));
   unifex_payload_alloc(env, UNIFEX_PAYLOAD_BINARY, output_size, output_payload);
 

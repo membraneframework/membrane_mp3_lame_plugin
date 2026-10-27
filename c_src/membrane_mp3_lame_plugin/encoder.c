@@ -33,6 +33,12 @@ UNIFEX_TERM create(UnifexEnv *env, int channels, int quality,
     goto create_exit;
   }
 
+  // encode_frame de-interleaves stereo samples
+  if (channels != 2) {
+    result = create_result_error(env, "invalid_channels");
+    goto create_exit;
+  }
+
   state->lame_state = lame_init();
   lame_global_flags *lame_state = state->lame_state;
 
